@@ -1,4 +1,4 @@
-import { runAgentTurn } from "../core/agent-runtime.js";
+import { runAgentTurn } from "../agent/runtime.js";
 import { createChildLogger } from "../utils/logger.js";
 import type { AgentInput, AgentTurnResult } from "../core/types.js";
 

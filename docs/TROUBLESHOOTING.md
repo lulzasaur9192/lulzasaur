@@ -4,69 +4,10 @@ A practical guide to diagnosing and fixing common issues based on real operation
 
 ## Table of Contents
 
-- [WhatsApp Integration Issues](#whatsapp-integration-issues)
 - [Slack Integration Issues](#slack-integration-issues)
 - [Performance & System Load](#performance--system-load)
 - [Agent Communication Problems](#agent-communication-problems)
 - [Database Connection Issues](#database-connection-issues)
-
----
-
-## WhatsApp Integration Issues
-
-### Symptom: No WhatsApp messages being received
-
-**Diagnostic Steps:**
-
-1. **Check if WhatsApp session is logged out:**
-   ```bash
-   npx tsx scripts/test-whatsapp.ts
-   ```
-
-2. **Look for Error 405:**
-   ```
-   Error: 405 - Device not found
-   ```
-   
-   **Cause:** WhatsApp session has been logged out (phone was logged out, session expired, or credentials invalidated)
-   
-   **Fix:**
-   - Delete credentials: `rm -rf ~/.openclaw/credentials/whatsapp/default/`
-   - Restart Lulzasaur: `npm start`
-   - Scan the QR code with your phone
-   - Verify with: `npx tsx scripts/test-whatsapp.ts`
-
-3. **Check connection status:**
-   ```bash
-   lsof -i :5222  # WhatsApp XMPP port
-   ```
-   
-   **Note:** WhatsApp uses IPv6 by default. Use `lsof -i6` to verify IPv6 connections.
-
-### Symptom: WhatsApp connects but notifications don't send
-
-**Possible Causes:**
-
-1. **Socket lifecycle bug** (fixed in recent updates)
-   - Old socket instances weren't cleaned up on reconnect
-   - Multiple handlers registered, causing race conditions
-   
-2. **Notifier not registered:**
-   ```typescript
-   // Check logs for:
-   "WhatsApp adapter registered as notifier"
-   ```
-   
-   If missing, the adapter isn't calling `registerAsNotifier()` properly.
-
-3. **Message delivery to wrong number:**
-   - Verify `.env` has correct `WHATSAPP_ALLOWED_NUMBERS`
-   - Check format: `+15104687011` (country code + number, no spaces)
-
-**Fix:**
-- Update to latest code (socket lifecycle fixes merged)
-- Restart Lulzasaur to re-register notifier
-- Check logs for connection events
 
 ---
 
@@ -274,10 +215,9 @@ Located in `scripts/` directory (see `scripts/README.md` for details):
 
 | Script | Purpose |
 |--------|---------|
-| `test-whatsapp.ts` | Test WhatsApp connection and credentials |
-| `test-slack.ts` | Test Slack API and bot token |
-| `db-query.ts` | Run direct database queries |
-| `agent-status.ts` | Check all agent states |
+| `db-health-check.ts` | Check database health |
+| `start-db.ts` | Start embedded PostgreSQL |
+| `nuke-db.ts` | Reset database completely |
 
 **Usage:**
 ```bash
@@ -315,22 +255,17 @@ npx tsx scripts/<script-name>.ts
 
 ## Prevention Best Practices
 
-1. **WhatsApp:**
-   - Keep phone connected and charged
-   - Don't log out from WhatsApp Web manually
-   - Monitor for Error 405 proactively
-
-2. **Performance:**
+1. **Performance:**
    - Limit recursive file operations
    - Add timeouts to shell commands
    - Monitor load average trends
 
-3. **Agents:**
+2. **Agents:**
    - Keep context budgets appropriate for task complexity
    - Monitor heartbeat execution times
    - Use bulletin board for coordination
 
-4. **Database:**
+3. **Database:**
    - Regular backups of `tmp-pg/` directory
    - Monitor connection pool usage
    - Keep schema migrations in version control
@@ -354,7 +289,6 @@ When something breaks:
 
 ## Related Documentation
 
-- [WhatsApp Setup Guide](WHATSAPP_SETUP.md)
 - [Slack Setup Guide](SLACK_SETUP.md)
 - [Scripts Documentation](../scripts/README.md)
 - [Main README](../README.md)

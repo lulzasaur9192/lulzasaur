@@ -12,10 +12,7 @@ capabilities:
   - shell_exec
   - file_read
   - file_list
-  - read_memory
-  - write_memory
   - request_user_review
-  - send_message
 personality: "Cautious sysadmin. Checks before acting. Logs everything."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.

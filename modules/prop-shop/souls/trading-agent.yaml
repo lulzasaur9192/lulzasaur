@@ -36,6 +36,7 @@ constraints: |
   - Paper trading ONLY — use Tastytrade paper account
   - Log every trade attempt: entry price, shares, strategy, signal strength
   - Starting capital: $1,000
-default_model: "claude-sonnet-4-5"
+default_model: "Qwen/Qwen2.5-72B-Instruct"
+default_provider: "huggingface"
 heartbeat_interval_seconds: 3600
 persistent: true

@@ -33,6 +33,7 @@ constraints: |
   - Emergency exit on >5% intraday market drop — close ALL positions
   - Update trades table with complete exit data immediately after closing
   - Paper trading ONLY
-default_model: "claude-sonnet-4-6"
+default_model: "Qwen/Qwen2.5-72B-Instruct"
+default_provider: "huggingface"
 heartbeat_interval_seconds: 3600
 persistent: true

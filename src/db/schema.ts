@@ -4,6 +4,7 @@ import {
   uuid,
   timestamp,
   integer,
+  real,
   boolean,
   jsonb,
   pgEnum,
@@ -75,6 +76,8 @@ export const soulDefinitions = pgTable("soul_definitions", {
   personality: text("personality"),
   constraints: text("constraints"),
   defaultModel: text("default_model"),
+  defaultProvider: text("default_provider"),
+  maxToolIterations: integer("max_tool_iterations"),
   contextBudget: integer("context_budget").default(150000),
   heartbeatIntervalSeconds: integer("heartbeat_interval_seconds"),
   schedules: jsonb("schedules").$type<HeartbeatSchedule[]>(),
@@ -98,6 +101,7 @@ export const agents = pgTable(
     parentId: uuid("parent_id").references((): any => agents.id),
     model: text("model"),
     provider: text("provider"),
+    maxToolIterations: integer("max_tool_iterations"),
     contextBudget: integer("context_budget").default(150000),
     heartbeatIntervalSeconds: integer("heartbeat_interval_seconds"),
     schedules: jsonb("schedules").$type<HeartbeatSchedule[]>(),
@@ -191,6 +195,28 @@ export const conversations = pgTable(
   },
   (table) => [
     index("idx_conversations_agent_active").on(table.agentId, table.isActive),
+  ],
+);
+
+// ── Memory Blocks (Letta/MemGPT-style core memory) ────────────────
+
+export const memoryBlocks = pgTable(
+  "memory_blocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id)
+      .notNull(),
+    label: text("label").notNull(),
+    description: text("description").notNull(),
+    value: text("value").notNull().default(""),
+    charLimit: integer("char_limit").notNull().default(2000),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_memory_blocks_agent").on(table.agentId),
+    index("idx_memory_blocks_agent_label").on(table.agentId, table.label),
   ],
 );
 
@@ -308,8 +334,7 @@ export const tokenUsageLog = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     agentId: uuid("agent_id")
-      .references(() => agents.id)
-      .notNull(),
+      .references(() => agents.id, { onDelete: "set null" }),
     agentName: text("agent_name").notNull(),
     model: text("model").notNull(),
     inputTokens: integer("input_tokens").notNull(),
@@ -318,7 +343,10 @@ export const tokenUsageLog = pgTable(
     cacheCreationInputTokens: integer("cache_creation_input_tokens").notNull().default(0),
     cacheReadInputTokens: integer("cache_read_input_tokens").notNull().default(0),
     toolCalls: integer("tool_calls").notNull().default(0),
+    iterations: integer("iterations").notNull().default(0),
     trigger: text("trigger").notNull().default("heartbeat"), // "heartbeat" | "chat" | "api"
+    contextTokensAtStart: integer("context_tokens_at_start"),
+    estimatedCostUsd: real("estimated_cost_usd"),
     durationMs: integer("duration_ms"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -326,6 +354,72 @@ export const tokenUsageLog = pgTable(
     index("idx_token_usage_agent").on(table.agentId),
     index("idx_token_usage_created").on(table.createdAt),
     index("idx_token_usage_model").on(table.model),
+  ],
+);
+
+// ── Knowledge Graph ──────────────────────────────────────────────
+
+export const entityTypeEnum = pgEnum("entity_type", [
+  "project",
+  "decision",
+  "research",
+  "lesson",
+  "preference",
+  "person",
+  "system",
+  "concept",
+]);
+
+export const knowledgeEntities = pgTable(
+  "knowledge_entities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    entityType: entityTypeEnum("entity_type").notNull(),
+    content: text("content").notNull(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id)
+      .notNull(),
+    projectId: uuid("project_id").references(() => projects.id),
+    confidence: integer("confidence").notNull().default(80),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    accessCount: integer("access_count").notNull().default(0),
+    lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_kg_entities_agent").on(table.agentId),
+    index("idx_kg_entities_project").on(table.projectId),
+    index("idx_kg_entities_type").on(table.entityType),
+    index("idx_kg_entities_name").on(table.name),
+  ],
+);
+
+export const knowledgeRelations = pgTable(
+  "knowledge_relations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceEntityId: uuid("source_entity_id")
+      .references(() => knowledgeEntities.id, { onDelete: "cascade" })
+      .notNull(),
+    targetEntityId: uuid("target_entity_id")
+      .references(() => knowledgeEntities.id, { onDelete: "cascade" })
+      .notNull(),
+    relationType: text("relation_type").notNull(),
+    strength: integer("strength").notNull().default(50),
+    context: text("context"),
+    agentId: uuid("agent_id")
+      .references(() => agents.id)
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_kg_relations_source").on(table.sourceEntityId),
+    index("idx_kg_relations_target").on(table.targetEntityId),
+    index("idx_kg_relations_type").on(table.relationType),
+    index("idx_kg_relations_agent").on(table.agentId),
   ],
 );
 

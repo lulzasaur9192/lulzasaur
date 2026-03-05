@@ -12,8 +12,6 @@ capabilities:
   - file_write
   - file_list
   - http_request
-  - read_memory
-  - write_memory
   - complete_task
 personality: "Diligent and precise. Does the work, reports the results."
 constraints: |

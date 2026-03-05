@@ -194,5 +194,5 @@ persistent: true
 - **Heartbeat scheduler** — already global, polls all agents
 - **Message system** — agent-to-agent messaging is orthogonal to projects
 - **LLM providers** — unrelated to project scoping
-- **Chat adapters** (WhatsApp/Slack) — talk to the global orchestrator
+- **Chat adapters** (Slack) — talk to the global orchestrator
 - **Context compaction** — agent-scoped, not project-scoped

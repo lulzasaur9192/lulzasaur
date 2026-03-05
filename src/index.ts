@@ -10,9 +10,9 @@ import { agents, soulDefinitions, projects } from "./db/schema.js";
 import { eq, ne, and } from "drizzle-orm";
 import { syncSoulsFromDirectory } from "./core/soul.js";
 import { syncProjectsFromDirectory, syncProjectSouls } from "./core/project.js";
-import { createAgent, gcTerminatedAgents, terminateTemporaryAgents, syncAgentsFromSouls } from "./core/agent-registry.js";
+import { createAgent, gcTerminatedAgents, terminateTemporaryAgents, syncAgentsFromSouls } from "./agent/registry.js";
 import { initializeDefaultProviders } from "./llm/registry.js";
-import { startScheduler, stopScheduler } from "./heartbeat/scheduler.js";
+import { startScheduler, stopScheduler } from "./agent/scheduler.js";
 import { handleInput } from "./interfaces/gateway.js";
 import { startWebServer } from "./interfaces/web/server.js";
 import {
@@ -32,10 +32,8 @@ import {
   setupReviewNotifications,
   printHelp,
 } from "./interfaces/cli/commands.js";
-import { WhatsAppAdapter } from "./interfaces/chat-adapters/whatsapp.js";
 import { SlackAdapter } from "./interfaces/chat-adapters/slack.js";
 import { createChildLogger } from "./utils/logger.js";
-import { existsSync } from "node:fs";
 import { getPendingCount } from "./inbox/user-inbox.js";
 import { ensureProjectChannels, ensureSystemChannel, setSystemChannelId } from "./integrations/slack-channels.js";
 import { setSlackRef } from "./integrations/slack-ref.js";
@@ -125,21 +123,6 @@ export async function boot() {
   // Start web server
   startWebServer(config.WEB_PORT, config.WEB_HOST);
 
-  // Start WhatsApp adapter if credentials exist
-  const waAuthDir = join(import.meta.dirname ? join(import.meta.dirname, "..") : process.cwd(), "credentials/whatsapp/default");
-  let whatsapp: WhatsAppAdapter | null = null;
-  if (existsSync(join(waAuthDir, "creds.json"))) {
-    whatsapp = new WhatsAppAdapter({
-      authDir: waAuthDir,
-      allowedNumbers: process.env.WHATSAPP_ALLOWED_NUMBERS?.split(",") ?? [],
-    });
-    whatsapp.onMessage(async (input) => {
-      const result = await handleInput(orchestratorId, input);
-      return result.response;
-    });
-    await whatsapp.start();
-  }
-
   // Start Slack adapter if tokens configured
   let slack: SlackAdapter | null = null;
   if (config.SLACK_BOT_TOKEN && config.SLACK_APP_TOKEN) {
@@ -208,7 +191,7 @@ export async function boot() {
   // Register CLI as a review notification listener
   setupReviewNotifications();
 
-  return { config, orchestratorId, whatsapp, slack };
+  return { config, orchestratorId, slack, agents: allAliveAgents };
 }
 
 // ANSI codes
@@ -238,11 +221,23 @@ function wrapText(text: string, width: number, indent: string): string {
 }
 
 async function main() {
-  const { config, orchestratorId } = await boot();
+  const { config, orchestratorId, agents: aliveAgents } = await boot();
+
+  // Build dynamic provider/model summary from live agents
+  const modelCounts = new Map<string, number>();
+  for (const a of aliveAgents) {
+    const key = `${a.provider ?? "anthropic"}/${a.model ?? "unknown"}`;
+    modelCounts.set(key, (modelCounts.get(key) ?? 0) + 1);
+  }
+  const modelSummary = [...modelCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => `${key} (${count})`)
+    .join(", ");
 
   console.log(`\n  ${BOLD}${CYAN}Lulzasaur${RESET} ${DIM}v0.1.0${RESET}`);
-  console.log(`  ${DIM}Model: ${config.DEFAULT_LLM_MODEL}${RESET}`);
-  console.log(`  ${DIM}Web:   http://localhost:${config.WEB_PORT}${RESET}`);
+  console.log(`  ${DIM}Agents: ${aliveAgents.length} active${RESET}`);
+  console.log(`  ${DIM}Models: ${modelSummary}${RESET}`);
+  console.log(`  ${DIM}Web:    http://localhost:${config.WEB_PORT}${RESET}`);
   console.log(`  ${DIM}Type /help for commands${RESET}\n`);
 
   const readline = await import("node:readline");

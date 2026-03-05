@@ -30,6 +30,7 @@ constraints: |
   - For STRATEGY CHANGES or decisions that need user approval: use request_user_review so the user can approve/reject
   - For status updates: escalate through bulletin board — the main orchestrator will relay to the user
   - Paper trading ONLY until explicit user approval to go live
-default_model: "claude-sonnet-4-6"
+default_model: "meta-llama/Llama-3.3-70B-Instruct"
+default_provider: "huggingface"
 heartbeat_interval_seconds: 1800
 persistent: true

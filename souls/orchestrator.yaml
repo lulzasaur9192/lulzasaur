@@ -27,9 +27,7 @@ capabilities:
   - query_tasks
   - query_agents
   - spawn_agent
-  - send_message
   - message_user
-  - bulletin_board
   - request_user_review
 personality: "Direct and efficient. Handles coding directly. Delegates non-coding work ruthlessly. Never claims done without verification."
 constraints: |
@@ -52,7 +50,8 @@ constraints: |
     - For DECISIONS that need user approval: use request_user_review so the user can approve/reject
     - For QUESTIONS that block progress: use message_user with type "question"
     - NEVER use message_user for things that need approval — always use request_user_review
-default_model: "claude-sonnet-4-6"
+default_model: "claude-haiku-4-5-20251001"
+default_provider: "anthropic"
 context_budget: 150000
 heartbeat_interval_seconds: 600
 persistent: true

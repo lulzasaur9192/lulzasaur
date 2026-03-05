@@ -22,6 +22,8 @@ export const soulSchema = z.object({
   personality: z.string().optional(),
   constraints: z.string().optional(),
   default_model: z.string().optional(),
+  default_provider: z.string().optional(),  // "anthropic" | "openai" | "huggingface"
+  max_tool_iterations: z.number().optional(),
   context_budget: z.number().default(150000),
   heartbeat_interval_seconds: z.number().nullable().optional(),
   schedules: z.array(heartbeatScheduleSchema).optional(),
@@ -44,7 +46,7 @@ export type SoulDefinition = z.infer<typeof soulSchema>;
 // ── Agent Input ────────────────────────────────────────────────────
 
 export interface AgentInput {
-  source: "cli" | "web" | "whatsapp" | "telegram" | "discord" | "slack" | "internal";
+  source: "cli" | "web" | "telegram" | "discord" | "slack" | "internal";
   text: string;
   senderId?: string;
   senderName?: string;
@@ -95,6 +97,7 @@ export interface LLMContentBlock {
   tool_use_id?: string;
   content?: string;
   is_error?: boolean;
+  cache_control?: { type: "ephemeral" };
 }
 
 export interface LLMTool {

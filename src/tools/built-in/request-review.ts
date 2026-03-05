@@ -7,7 +7,7 @@ import { createInboxItem, dismissStaleItemsForTask } from "../../inbox/user-inbo
 
 const log = createChildLogger("tool-request-review");
 
-// Listeners registered by interfaces (CLI, web, WhatsApp) to notify the user
+// Listeners registered by interfaces (CLI, web, Slack) to notify the user
 type ReviewNotifier = (review: {
   taskId: string;
   title: string;

@@ -15,3 +15,10 @@ credentials/
 *.p12
 *.bak
 *.backup
+__pycache__/
+.venv/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+*.pkl

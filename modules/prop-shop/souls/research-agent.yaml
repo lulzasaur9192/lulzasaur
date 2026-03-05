@@ -32,6 +32,7 @@ constraints: |
   - Never promote a strategy with <55% win rate or <1.5 profit factor
   - Allowed strategies: defined-risk only (spreads). No naked options.
   - When an active strategy's live win rate drops below 55% over 20+ trades, flag for retirement
-default_model: "claude-sonnet-4-6"
+default_model: "meta-llama/Llama-3.3-70B-Instruct"
+default_provider: "huggingface"
 heartbeat_interval_seconds: 3600
 persistent: true

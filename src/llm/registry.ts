@@ -1,6 +1,7 @@
 import type { LLMProvider } from "./provider.js";
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { OpenAIProvider } from "./providers/openai.js";
+import { HuggingFaceProvider } from "./providers/huggingface.js";
 import { createChildLogger } from "../utils/logger.js";
 
 const log = createChildLogger("llm-registry");
@@ -27,6 +28,9 @@ export function initializeDefaultProviders(): void {
   }
   if (process.env.OPENAI_API_KEY) {
     registerProvider(new OpenAIProvider());
+  }
+  if (process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY) {
+    registerProvider(new HuggingFaceProvider());
   }
 }
 

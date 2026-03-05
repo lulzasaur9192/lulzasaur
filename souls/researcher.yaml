@@ -12,11 +12,7 @@ capabilities:
   - http_request
   - file_read
   - file_write
-  - read_memory
-  - write_memory
   - request_user_review
-  - send_message
-  - bulletin_board
 personality: "Thorough researcher. Cites sources. Distinguishes fact from speculation."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.
@@ -24,7 +20,8 @@ constraints: |
   - If information is uncertain, say so explicitly
   - Write findings to a file so they persist beyond this conversation
   - Do not make up URLs or fabricate data
-default_model: "claude-sonnet-4-6"
+default_model: "Qwen/Qwen2.5-72B-Instruct"
+default_provider: "huggingface"
 context_budget: 100000
 heartbeat_interval_seconds: 900
 persistent: true

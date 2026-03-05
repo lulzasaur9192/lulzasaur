@@ -32,5 +32,6 @@ constraints: |
   - Never modify historical data — append only
   - Run quality checks before marking data as ready
 default_model: "claude-haiku-4-5-20251001"
+max_tool_iterations: 40
 heartbeat_interval_seconds: 3600
 persistent: true

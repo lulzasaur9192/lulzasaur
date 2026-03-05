@@ -92,8 +92,9 @@ The system operates on **Pacific Time** (Tastytrade / US markets):
 | Event | Time (PST) |
 |-------|-----------|
 | Market open | 6:30 AM |
-| Start scanning | 6:45 AM (15-min buffer) |
+| Pipeline runs | ~7:30 AM (fetches overnight data, scans for signals) |
 | Market close | 1:00 PM |
+| Position monitoring | Hourly, 7:00 AM – 1:00 PM |
 | After-hours checks | As needed |
 
 ---
@@ -123,16 +124,16 @@ Everything else runs autonomously.
 ## Project Files
 
 ```
-projects/prop-shop/
+modules/prop-shop/
 ├── README.md                    # Data pipeline technical reference
 ├── config.yaml                  # Symbols, indicators, strategy params
 ├── run_daily_pipeline.py        # Pipeline orchestrator script
-├── src/data_pipeline/           # Market data fetch + indicator calculation
+├── src/                         # Market data fetch + indicator calculation
 ├── data/db/market_data.db       # SQLite database
-├── docs/
-│   ├── MONITORING_REQUIREMENTS.md
-│   └── POSITION_MONITORING.md
-└── risk_manager/                # Risk enforcement code
+├── docs/                        # Monitoring requirements + position guides
+├── risk_manager/                # Risk enforcement code
+├── souls/                       # Agent soul definitions
+└── logs/                        # Daily pipeline logs
 ```
 
 ---
@@ -143,3 +144,4 @@ projects/prop-shop/
 |------|----------|---------|
 | Mar 3, 2026 | Activate paper trading with $1,000 | ✅ Approved |
 | Mar 3, 2026 | RSI threshold: use 40 instead of 35 | ✅ Approved (research validated) |
+| Mar 3, 2026 | Added ticker whitelist (PLTR, GDX only) | ✅ Auto-fixed by prop-orchestrator |

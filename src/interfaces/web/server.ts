@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { agentRoutes } from "./routes/agents.js";
 import { taskRoutes } from "./routes/tasks.js";
 import { messageRoutes } from "./routes/messages.js";
@@ -43,7 +45,17 @@ export function startWebServer(port: number, host: string) {
   return app;
 }
 
+let _dashboardJsCache: string | null = null;
 function dashboardJs(): string {
-  // Inline the dashboard JS — no Vite build step needed for Phase 5
-  return `// Dashboard JS loaded`;
+  if (!_dashboardJsCache) {
+    try {
+      _dashboardJsCache = readFileSync(
+        resolve(process.cwd(), "dist/dashboard.js"),
+        "utf-8"
+      );
+    } catch {
+      return "// Dashboard bundle not built yet. Run: npm run build:dashboard";
+    }
+  }
+  return _dashboardJsCache;
 }

@@ -22,5 +22,15 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/interfaces/web/dashboard/main.tsx",
+    "src/interfaces/web/dashboard/App.tsx",
+    "src/interfaces/web/dashboard/components",
+    "src/interfaces/web/dashboard/pages",
+    "src/interfaces/web/dashboard/context",
+    "src/interfaces/web/dashboard/hooks"
+  ]
 }

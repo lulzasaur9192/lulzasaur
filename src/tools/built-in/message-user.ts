@@ -16,7 +16,7 @@ type UserNotifier = (notification: {
 
 const notifiers: UserNotifier[] = [];
 
-/** Register a notifier — called by each interface (CLI, web, WhatsApp) at startup. */
+/** Register a notifier — called by each interface (CLI, web, Slack) at startup. */
 export function onUserMessage(fn: UserNotifier): void {
   notifiers.push(fn);
 }

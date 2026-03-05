@@ -1,0 +1,13 @@
+yfinance>=0.2.38
+pandas>=2.0.0
+pandas_ta>=0.3.14b
+numpy>=1.26.0
+sqlalchemy>=2.0.0
+pyyaml>=6.0
+pandas-market-calendars>=4.3.0
+# sqlite3 is built into Python's standard library — no install needed
+
+# Research / backtesting
+ta>=0.11.0          # Technical indicators (RSI, etc.) — used by research/
+matplotlib>=3.7.0   # Charting equity curves
+jupyter>=1.0.0      # Notebook exploration

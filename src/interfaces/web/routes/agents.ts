@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { eq, ne, and } from "drizzle-orm";
+import { eq, ne, and, desc } from "drizzle-orm";
 import { getDb } from "../../../db/client.js";
-import { agents, soulDefinitions, conversations, agentMemory } from "../../../db/schema.js";
-import { createAgent } from "../../../core/agent-registry.js";
-import { runAgentTurn } from "../../../core/agent-runtime.js";
+import { agents, soulDefinitions, conversations, agentMemory, heartbeatLog } from "../../../db/schema.js";
+import { createAgent } from "../../../agent/registry.js";
+import { runAgentTurn } from "../../../agent/runtime.js";
 
 export const agentRoutes = new Hono();
 
@@ -81,6 +81,26 @@ agentRoutes.get("/:id/claude-code-status", async (c) => {
     return c.json({ status: null });
   }
   return c.json({ status: result[0]!.value, updatedAt: result[0]!.updatedAt });
+});
+
+// Get agent heartbeats (last 20)
+agentRoutes.get("/:id/heartbeats", async (c) => {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: heartbeatLog.id,
+      agentId: heartbeatLog.agentId,
+      triggeredAt: heartbeatLog.triggeredAt,
+      completedAt: heartbeatLog.completedAt,
+      durationMs: heartbeatLog.durationMs,
+      result: heartbeatLog.result,
+      error: heartbeatLog.error,
+    })
+    .from(heartbeatLog)
+    .where(eq(heartbeatLog.agentId, c.req.param("id")))
+    .orderBy(desc(heartbeatLog.triggeredAt))
+    .limit(20);
+  return c.json(rows);
 });
 
 // Send message to agent (chat)

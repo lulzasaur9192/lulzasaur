@@ -1,0 +1,40 @@
+# prop-shop data pipeline configuration
+
+symbols:
+  - PLTR     # Validated: 78.3% WR, 8.53 PF at RSI < 40
+  - GDX      # Validated: 65.2% WR, 2.10 PF at RSI < 40
+  - SPY      # Benchmark: regime classification only — NOT traded
+  - VIX      # fetched as ^VIX via yfinance — regime filter only
+  - SOFI     # Volatile: stale data as of 2026-03-02
+  - XLF      # Volatile: stale data as of 2026-03-02
+  - RIOT     # Volatile: stale data as of 2026-03-02
+
+# Date range: leave start_date empty to auto-calculate (2 years back from today)
+start_date: ""
+end_date: ""   # empty = today
+
+database:
+  path: data/db/market_data.db
+
+export:
+  daily_dir: data/daily
+
+indicators:
+  rsi_period: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  ema_periods: [8, 21, 50]
+  bb_period: 20
+  bb_std: 2.0
+  adx_period: 14
+  atr_period: 14
+
+regime:
+  vix_low_threshold: 15
+  vix_high_threshold: 25
+  ema_fast: 8
+  ema_slow: 21
+
+logging:
+  level: INFO

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { eq, and } from "drizzle-orm";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
-import { claudeCodeStream } from "../../events/claude-code-stream.js";
+import { claudeCodeStream } from "../../integrations/claude-code-stream.js";
 import { getDb } from "../../db/client.js";
 import { agentMemory } from "../../db/schema.js";
 

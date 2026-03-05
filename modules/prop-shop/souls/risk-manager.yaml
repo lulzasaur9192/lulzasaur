@@ -35,6 +35,7 @@ constraints: |
   - Full system pause at -30% drawdown from peak — notify user immediately
   - Paper trading ONLY until explicit user approval
   - Allowed strategies only: defined-risk (spreads). No naked options, no straddles
-default_model: "claude-sonnet-4-6"
+default_model: "meta-llama/Llama-3.3-70B-Instruct"
+default_provider: "huggingface"
 heartbeat_interval_seconds: 1800
 persistent: true

@@ -18,7 +18,7 @@ Why narrow agents?
 - **Composable** — you can mix and match agents for different workflows
 - **Replaceable** — swap out one agent's model or soul without touching the rest
 
-Each soul is capped at **10 capabilities max**. If you need more, you need two agents.
+Each soul is capped at **10 specialized capabilities max**. If you need more, you need two agents. Core infrastructure capabilities (memory, messaging, bulletin board, knowledge graph) are auto-included for all agents and don't count toward this limit.
 
 ### 2. Every Agent Has a Prime Directive
 
@@ -132,8 +132,8 @@ This separation means the coder agent acts as a senior engineering lead — it k
                     │                 INTERFACES                       │
                     │  ┌─────────┐ ┌──────────┐ ┌──────────────────┐  │
                     │  │   CLI   │ │ Web UI   │ │  Chat Adapters   │  │
-                    │  │  (REPL) │ │(React +  │ │ WhatsApp,Telegram│  │
-                    │  │         │ │ Hono API)│ │ Discord,Slack,...│  │
+                    │  │  (REPL) │ │(React +  │ │ Slack, Telegram, │  │
+                    │  │         │ │ Hono API)│ │ Discord, ...     │  │
                     │  └────┬────┘ └────┬─────┘ └───────┬──────────┘  │
                     └───────┼───────────┼───────────────┼──────────────┘
                             └───────────┼───────────────┘
@@ -191,7 +191,7 @@ This separation means the coder agent acts as a senior engineering lead — it k
 | Validation | Zod |
 | Web API | Hono |
 | CLI | ink (React for terminal) |
-| Chat | @whiskeysockets/baileys (WhatsApp) |
+| Chat | @slack/bolt (Slack) |
 | Logging | pino |
 | Scheduling | Internal heartbeat scheduler |
 
@@ -334,7 +334,7 @@ npm run start    # Boots everything: gateway, scheduler, web UI, heartbeats
 |-----------|--------|
 | CLI REPL | `lulzasaur chat` |
 | Web Dashboard | `http://localhost:3000` |
-| WhatsApp | Configured via .env |
+| Slack | Configured via .env |
 
 ### CLI Commands
 
@@ -366,7 +366,7 @@ lulzasaur/
 │   ├── writer.yaml
 │   ├── sysadmin.yaml
 │   └── worker-generic.yaml
-├── projects/                       # Agent-built work goes here
+├── modules/                        # Project modules (YAML + workspaces)
 ├── src/
 │   ├── index.ts                    # Entry point
 │   ├── config/                     # Environment + defaults
@@ -382,9 +382,8 @@ lulzasaur/
 │   │   ├── task-manager.ts         # Task CRUD + state machine
 │   │   ├── task-router.ts          # Task → agent routing
 │   │   └── task-verifier.ts        # Verification logic
-│   ├── messages/
-│   │   ├── message-bus.ts          # Send/receive/ack
-│   │   └── inbox.ts                # Per-agent inbox queries
+│   ├── inbox/
+│   │   └── user-inbox.ts           # User inbox management
 │   ├── llm/
 │   │   ├── provider.ts             # Abstract LLMProvider interface
 │   │   ├── registry.ts             # Provider resolution
@@ -400,9 +399,9 @@ lulzasaur/
 │   │   ├── gateway.ts              # Input normalization + routing
 │   │   ├── cli/                    # Terminal REPL + admin commands
 │   │   ├── web/                    # Hono API + React dashboard
-│   │   └── chat-adapters/          # WhatsApp, Telegram, etc.
+│   │   └── chat-adapters/          # Slack, Telegram, etc.
 │   └── utils/                      # Logger, errors, retry
-└── tests/
+└── scripts/                       # Operational scripts
 ```
 
 ## License

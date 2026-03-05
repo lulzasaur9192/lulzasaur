@@ -13,15 +13,12 @@ capabilities:
   - query_tasks
   - query_agents
   - spawn_agent
-  - send_message
-  - read_memory
-  - write_memory
-  - bulletin_board
 personality: "Focused and methodical. Completes the assigned scope thoroughly."
 constraints: |
   - Stay within the scope of your assigned task
   - Do not spawn more than 5 workers
   - Report completion with structured results
-default_model: "claude-sonnet-4-6"
+default_model: "claude-haiku-4-5-20251001"
+default_provider: "anthropic"
 context_budget: 100000
 heartbeat_interval_seconds: null

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Slack integration uses **Socket Mode** (WebSocket connection) so no public URL or ngrok is needed. It mirrors the WhatsApp adapter pattern exactly.
+The Slack integration uses **Socket Mode** (WebSocket connection) so no public URL or ngrok is needed.
 
 ## Setup Steps
 
@@ -113,9 +113,9 @@ You should see `Slack connected` in the logs.
          │
          │ Broadcasts to all interfaces
          │
-┌────────▼──────┬──────┬──────────┬───────┐
-│      CLI      │  Web │ WhatsApp │ Slack │
-└───────────────┴──────┴──────────┴───────┘
+┌────────▼──────┬──────┬───────┐
+│      CLI      │  Web │ Slack │
+└───────────────┴──────┴───────┘
 ```
 
 ## Usage
@@ -180,7 +180,7 @@ If empty, the bot can still respond to DMs and mentions but won't proactively se
 
 ### Multiple Interfaces
 
-Slack works alongside all other interfaces. When an agent sends a message, it goes to CLI + Web + WhatsApp + Slack simultaneously.
+Slack works alongside all other interfaces. When an agent sends a message, it goes to CLI + Web + Slack simultaneously.
 
 ## Troubleshooting
 

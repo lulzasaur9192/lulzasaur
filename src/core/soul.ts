@@ -48,6 +48,8 @@ export async function syncSoulsFromDirectory(soulsDir: string): Promise<void> {
           personality: soul.personality ?? null,
           constraints: soul.constraints ?? null,
           defaultModel: soul.default_model ?? null,
+          defaultProvider: soul.default_provider ?? null,
+          maxToolIterations: soul.max_tool_iterations ?? null,
           contextBudget: soul.context_budget,
           heartbeatIntervalSeconds: soul.heartbeat_interval_seconds ?? null,
           schedules: soul.schedules ?? null,
@@ -67,6 +69,7 @@ export async function syncSoulsFromDirectory(soulsDir: string): Promise<void> {
         personality: soul.personality ?? null,
         constraints: soul.constraints ?? null,
         defaultModel: soul.default_model ?? null,
+        defaultProvider: soul.default_provider ?? null,
         contextBudget: soul.context_budget,
         heartbeatIntervalSeconds: soul.heartbeat_interval_seconds ?? null,
         schedules: soul.schedules ?? null,
@@ -123,6 +126,8 @@ export async function cloneSoul(
       personality: overrides?.personality ?? source.personality,
       constraints: overrides?.constraints ?? source.constraints,
       defaultModel: source.defaultModel,
+      defaultProvider: source.defaultProvider,
+      maxToolIterations: source.maxToolIterations,
       contextBudget: source.contextBudget,
       heartbeatIntervalSeconds: source.heartbeatIntervalSeconds,
       persistent: source.persistent,
@@ -196,15 +201,15 @@ export function buildSystemPrompt(soul: {
     );
   }
 
-  // Inject projects directory so agents know where to put work
+  // Inject modules directory so agents know where to put work
   const config = getConfig();
-  const projectsDir = config.PROJECTS_DIR
-    ?? (import.meta.dirname ? join(import.meta.dirname, "..", "..", "projects") : join(process.cwd(), "projects"));
+  const modulesDir = config.MODULES_DIR
+    ?? (import.meta.dirname ? join(import.meta.dirname, "..", "..", "modules") : join(process.cwd(), "modules"));
   parts.push(
     "",
     "## Workspace",
-    `All project work should be created under: ${projectsDir}`,
-    "Each project gets its own subdirectory (e.g. projects/my-app/).",
+    `All project work should be created under: ${modulesDir}`,
+    "Each project gets its own subdirectory (e.g. modules/my-project/).",
   );
 
   // Only include system interfaces section if agent has user-facing capabilities
@@ -212,7 +217,7 @@ export function buildSystemPrompt(soul: {
     parts.push(
       "",
       "## System Interfaces",
-      "Active: CLI, Web (localhost:3000), WhatsApp, Slack (if configured).",
+      "Active: CLI, Web (localhost:3000), Slack (if configured).",
       "message_user and request_user_review deliver to ALL active interfaces.",
     );
   }
@@ -222,6 +227,42 @@ export function buildSystemPrompt(soul: {
     "## Rules",
     "- Use tools to do work, not just describe it. Use complete_task with results when done.",
     "- Never claim done without verification. Query for info — don't assume.",
+  );
+
+  parts.push(
+    "",
+    "## Memory",
+    "You have persistent memory that survives context compaction. USE IT.",
+    "",
+    "### Core Memory Blocks (always in context):",
+    "Your core memory blocks (persona, learned_preferences, working_context, domain_knowledge) are always",
+    "visible to you at the end of this system prompt. Update them with update_memory_block.",
+    "- persona: Your self-understanding. Update as you learn about your role and approach.",
+    "- learned_preferences: User/project preferences you discover. Coding style, conventions, tool choices.",
+    "- working_context: Your scratchpad — current state, pending work, blockers. Update frequently.",
+    "- domain_knowledge: Key domain facts, architecture decisions, important patterns.",
+    "",
+    "### When to save:",
+    "- Update working_context at the start and end of each task",
+    "- Update learned_preferences when you discover user or project preferences",
+    "- Update domain_knowledge when you learn important facts about the system",
+    "- Use kg_store for structured knowledge with relationships — decisions, lessons, research",
+    "- Use write_memory for quick key-value notes",
+    "",
+    "### When to recall:",
+    "- Your memory blocks are already in context — check them first",
+    "- Before starting any task: kg_search for prior attempts or related knowledge",
+    "- Use reflect periodically to extract learnings from your conversation into memory blocks",
+    "",
+    "### Tool choice:",
+    "- update_memory_block: update your core memory blocks (always in context)",
+    "- reflect: analyze recent conversation and get suggestions for memory updates",
+    "- write_memory / read_memory: quick key-value notes",
+    "- kg_store: structured knowledge with relationships — decisions, lessons, research",
+    "- kg_search: find what you or other agents have learned (use include_other_agents for cross-agent)",
+    "- kg_traverse: explore connections from a known entity",
+    "",
+    "Do not rely on conversation context alone — it gets compacted. What you don't save, you will forget.",
   );
 
   return parts.join("\n");

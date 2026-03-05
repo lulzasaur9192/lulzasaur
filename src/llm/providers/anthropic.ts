@@ -156,7 +156,11 @@ export class AnthropicProvider implements LLMProvider {
 
     const blocks = msg.content.map((block): Anthropic.ContentBlockParam => {
       if (block.type === "text") {
-        return { type: "text", text: block.text ?? "" };
+        return {
+          type: "text",
+          text: block.text ?? "",
+          ...(block.cache_control ? { cache_control: block.cache_control } : {}),
+        };
       }
       if (block.type === "tool_use") {
         return {
@@ -164,6 +168,7 @@ export class AnthropicProvider implements LLMProvider {
           id: block.id ?? "",
           name: block.name ?? "",
           input: block.input as Record<string, unknown>,
+          ...(block.cache_control ? { cache_control: block.cache_control } : {}),
         };
       }
       if (block.type === "tool_result") {
@@ -171,6 +176,7 @@ export class AnthropicProvider implements LLMProvider {
           type: "tool_result",
           tool_use_id: block.tool_use_id ?? "",
           content: block.content ?? "",
+          ...(block.cache_control ? { cache_control: block.cache_control } : {}),
         };
       }
       return { type: "text", text: "" };

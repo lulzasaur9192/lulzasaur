@@ -1,5 +1,5 @@
-import { getAgent } from "../../core/agent-registry.js";
-import { spawnChildAgent } from "../../core/agent-spawner.js";
+import { getAgent } from "../../agent/registry.js";
+import { spawnChildAgent } from "../../agent/spawner.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
 

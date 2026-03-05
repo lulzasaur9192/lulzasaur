@@ -4,8 +4,8 @@ import { desc, gt, gte, eq, and, isNotNull, ne, sql } from "drizzle-orm";
 import { getDb } from "../../../db/client.js";
 import { heartbeatLog, agents, tasks, userInbox, tokenUsageLog } from "../../../db/schema.js";
 import { getPendingCount } from "../../../inbox/user-inbox.js";
-import { claudeCodeStream, type ClaudeCodeStreamEvent } from "../../../events/claude-code-stream.js";
-import { getActiveScheduleInterval } from "../../../heartbeat/schedule-matcher.js";
+import { claudeCodeStream, type ClaudeCodeStreamEvent } from "../../../integrations/claude-code-stream.js";
+import { getActiveScheduleInterval } from "../../../agent/schedule-matcher.js";
 
 export const activityRoutes = new Hono();
 

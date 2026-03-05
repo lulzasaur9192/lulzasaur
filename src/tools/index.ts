@@ -15,6 +15,12 @@ import "./built-in/claude-code.js";
 import "./built-in/request-review.js";
 import "./built-in/message-user.js";
 import "./built-in/bulletin-board.js";
+import "./built-in/kg-store.js";
+import "./built-in/kg-search.js";
+import "./built-in/kg-traverse.js";
+import "./built-in/kg-delete.js";
+import "./built-in/update-memory-block.js";
+import "./built-in/reflect.js";
 
 export { registerTool, getTool, listTools } from "./tool-registry.js";
 export { executeToolCall, getToolsForAgent } from "./tool-executor.js";
