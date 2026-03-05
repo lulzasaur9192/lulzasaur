@@ -1,0 +1,20 @@
+// Import all built-in tools to trigger their registration via side effects
+import "./built-in/shell-exec.js";
+import "./built-in/file-ops.js";
+import "./built-in/http-request.js";
+import "./built-in/create-task.js";
+import "./built-in/complete-task.js";
+import "./built-in/query-tasks.js";
+import "./built-in/spawn-agent.js";
+import "./built-in/send-message.js";
+import "./built-in/read-memory.js";
+import "./built-in/write-memory.js";
+import "./built-in/evaluate-goals.js";
+import "./built-in/query-agents.js";
+import "./built-in/claude-code.js";
+import "./built-in/request-review.js";
+import "./built-in/message-user.js";
+import "./built-in/bulletin-board.js";
+
+export { registerTool, getTool, listTools } from "./tool-registry.js";
+export { executeToolCall, getToolsForAgent } from "./tool-executor.js";

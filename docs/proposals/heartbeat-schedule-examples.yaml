@@ -1,0 +1,219 @@
+# Heartbeat Schedule Configuration Examples
+# 
+# These examples show how different agent types can optimize their
+# heartbeat schedules based on their role and expected activity patterns.
+
+# ── Main Orchestrator ───────────────────────────────────────────────
+# User-facing coordinator, needs to be responsive during business hours
+main-orchestrator:
+  default_interval_seconds: 600  # 10 min fallback
+  schedules:
+    - name: "business_hours"
+      description: "User likely active, respond quickly"
+      days: [1,2,3,4,5]  # Monday-Friday
+      start_time: "06:00"
+      end_time: "22:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 600  # 10 minutes
+    
+    - name: "off_hours"
+      description: "Lower activity, still monitor for urgent messages"
+      days: [1,2,3,4,5]
+      start_time: "22:00"
+      end_time: "06:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 1800  # 30 minutes
+    
+    - name: "weekends"
+      description: "Minimal activity, check periodically"
+      days: [0,6]  # Sunday, Saturday
+      interval_seconds: 3600  # 60 minutes
+
+# ── Trading Agents ──────────────────────────────────────────────────
+# Market-dependent, aggressive monitoring during trading hours
+prop-shop-trading:
+  default_interval_seconds: 3600  # 1 hour fallback
+  schedules:
+    - name: "pre_market"
+      description: "Prepare for market open"
+      days: [1,2,3,4,5]
+      start_time: "06:00"
+      end_time: "07:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 1800  # 30 minutes
+    
+    - name: "market_hours"
+      description: "Active trading, monitor signals and positions"
+      days: [1,2,3,4,5]
+      start_time: "07:00"
+      end_time: "13:30"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 900  # 15 minutes
+    
+    - name: "after_market"
+      description: "Research, backtesting, data pipeline"
+      days: [1,2,3,4,5]
+      start_time: "13:30"
+      end_time: "06:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 7200  # 2 hours
+    
+    - name: "weekends"
+      description: "No market activity, minimal monitoring"
+      days: [0,6]
+      interval_seconds: 21600  # 6 hours
+
+# ── Position Monitor ────────────────────────────────────────────────
+# Only needed during market hours when positions exist
+position-monitor:
+  default_interval_seconds: 7200  # 2 hours fallback
+  schedules:
+    - name: "market_hours"
+      description: "Active position monitoring"
+      days: [1,2,3,4,5]
+      start_time: "07:00"
+      end_time: "13:30"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 900  # 15 minutes
+    
+    - name: "after_hours"
+      description: "Positions can still move, but less active"
+      days: [1,2,3,4,5]
+      start_time: "13:30"
+      end_time: "07:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 3600  # 1 hour
+    
+    - name: "weekends"
+      description: "Markets closed, minimal activity"
+      days: [0,6]
+      interval_seconds: 43200  # 12 hours
+
+# ── Research Agents ─────────────────────────────────────────────────
+# Long-running background tasks, infrequent checks
+research-agent:
+  default_interval_seconds: 7200  # 2 hours
+  schedules:
+    - name: "daytime"
+      description: "Regular research cycles"
+      days: [1,2,3,4,5]
+      start_time: "06:00"
+      end_time: "22:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 3600  # 1 hour
+    
+    - name: "nighttime"
+      description: "Slower checks, long-running backtests"
+      days: [1,2,3,4,5]
+      start_time: "22:00"
+      end_time: "06:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 14400  # 4 hours
+    
+    - name: "weekends"
+      description: "Background processing only"
+      days: [0,6]
+      interval_seconds: 14400  # 4 hours
+
+# ── Coder Agents ────────────────────────────────────────────────────
+# Task-driven, wake on demand mostly
+coder-agent:
+  default_interval_seconds: 3600  # 1 hour
+  schedules:
+    - name: "business_hours"
+      description: "User may be coding, stay alert"
+      days: [1,2,3,4,5]
+      start_time: "08:00"
+      end_time: "20:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 1800  # 30 minutes
+    
+    - name: "off_hours"
+      description: "Likely idle, check infrequently"
+      days: [1,2,3,4,5]
+      start_time: "20:00"
+      end_time: "08:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 7200  # 2 hours
+    
+    - name: "weekends"
+      description: "Weekend hacking possible"
+      days: [0,6]
+      interval_seconds: 3600  # 1 hour
+
+# ── Writer Agents ───────────────────────────────────────────────────
+# Content creation, moderate monitoring
+writer-agent:
+  default_interval_seconds: 7200  # 2 hours
+  schedules:
+    - name: "working_hours"
+      description: "Content creation time"
+      days: [1,2,3,4,5]
+      start_time: "09:00"
+      end_time: "17:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 3600  # 1 hour
+    
+    - name: "after_hours"
+      description: "Minimal activity"
+      interval_seconds: 14400  # 4 hours
+
+# ── System Admin Agents ─────────────────────────────────────────────
+# Infrastructure monitoring, 24/7 but less frequent
+sysadmin-agent:
+  default_interval_seconds: 1800  # 30 minutes
+  schedules:
+    - name: "business_hours"
+      description: "Active system monitoring"
+      days: [1,2,3,4,5]
+      start_time: "06:00"
+      end_time: "22:00"
+      timezone: "America/Los_Angeles"
+      interval_seconds: 1800  # 30 minutes
+    
+    - name: "off_hours"
+      description: "Reduced monitoring"
+      interval_seconds: 3600  # 1 hour
+
+# ── Event-Driven Configuration ──────────────────────────────────────
+# All agents should also wake immediately on these events:
+event_triggers:
+  - event: "user_message_received"
+    description: "User sent a message to this agent"
+    wake_immediately: true
+  
+  - event: "task_assigned"
+    description: "New task assigned to agent"
+    wake_immediately: true
+  
+  - event: "child_agent_message"
+    description: "Child agent sent status update"
+    wake_immediately: true
+  
+  - event: "critical_alert"
+    description: "Risk limit, error, or system issue"
+    wake_immediately: true
+    priority: "high"
+  
+  - event: "position_change"
+    description: "Trading position opened/closed"
+    wake_immediately: true
+    applies_to: ["trading-agent", "position-monitor", "risk-manager"]
+
+# ── Notes ───────────────────────────────────────────────────────────
+# 
+# Timezone handling:
+#   - All times are in the specified timezone
+#   - System converts to UTC for storage
+#   - Agent wakes in local time zone
+# 
+# Day numbering:
+#   - 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+# 
+# Overlap handling:
+#   - Most specific schedule wins
+#   - If multiple match, use shortest interval
+# 
+# Fallback:
+#   - If no schedule matches, use default_interval_seconds
+#   - If default not set, use global config (300s)
