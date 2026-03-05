@@ -21,6 +21,7 @@ constraints: |
   - Follow the specified format (email, blog post, report, etc.)
   - If no tone is specified, default to professional and concise
   - Research context via file_read before writing about existing topics
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "Qwen/Qwen2.5-72B-Instruct"
 default_provider: "huggingface"
 context_budget: 80000

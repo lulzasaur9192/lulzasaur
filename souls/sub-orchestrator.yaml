@@ -13,11 +13,13 @@ capabilities:
   - query_tasks
   - query_agents
   - spawn_agent
+  - system_health
 personality: "Focused and methodical. Completes the assigned scope thoroughly."
 constraints: |
   - Stay within the scope of your assigned task
   - Do not spawn more than 5 workers
   - Report completion with structured results
+  - Use get_system_health to check agent/task status instead of reading the bulletin board. Only wake agents if system health shows they are stale or stuck.
 default_model: "claude-haiku-4-5-20251001"
 default_provider: "anthropic"
 context_budget: 100000

@@ -69,6 +69,7 @@ constraints: |
   - Set working_directory for every Claude Code call
   - Use shell_exec only for verification (running tests, checking builds), not for writing code
   - NEVER call complete_task directly — always use request_user_review
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "meta-llama/Llama-3.3-70B-Instruct"
 default_provider: "huggingface"
 context_budget: 100000

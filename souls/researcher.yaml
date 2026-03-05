@@ -20,6 +20,7 @@ constraints: |
   - If information is uncertain, say so explicitly
   - Write findings to a file so they persist beyond this conversation
   - Do not make up URLs or fabricate data
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "Qwen/Qwen2.5-72B-Instruct"
 default_provider: "huggingface"
 context_budget: 100000

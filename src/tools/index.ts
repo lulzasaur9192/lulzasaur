@@ -7,6 +7,7 @@ import "./built-in/complete-task.js";
 import "./built-in/query-tasks.js";
 import "./built-in/spawn-agent.js";
 import "./built-in/send-message.js";
+import "./built-in/wake-agent.js";
 import "./built-in/read-memory.js";
 import "./built-in/write-memory.js";
 import "./built-in/evaluate-goals.js";
@@ -21,6 +22,8 @@ import "./built-in/kg-traverse.js";
 import "./built-in/kg-delete.js";
 import "./built-in/update-memory-block.js";
 import "./built-in/reflect.js";
+import "./built-in/update-task-progress.js";
+import "./built-in/get-system-health.js";
 
 export { registerTool, getTool, listTools } from "./tool-registry.js";
 export { executeToolCall, getToolsForAgent } from "./tool-executor.js";

@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { getDb } from "../../db/client.js";
-import { agents, soulDefinitions } from "../../db/schema.js";
+import { agents, soulDefinitions, tasks } from "../../db/schema.js";
 import { registerTool } from "../tool-registry.js";
 import { resolveAgentId } from "../resolve-agent.js";
 
@@ -67,19 +67,47 @@ registerTool({
       results = rows.filter((r) => r.soul?.name === input.soul_name);
     }
 
+    // Fetch active tasks for each agent
+    const agentIds = results.map((r) => r.agent.id);
+    const activeTasks = agentIds.length > 0
+      ? await db
+          .select()
+          .from(tasks)
+          .where(and(
+            or(
+              eq(tasks.status, "in_progress" as any),
+              eq(tasks.status, "assigned" as any),
+            ),
+          ))
+      : [];
+
     return {
       count: results.length,
-      agents: results.map((r) => ({
-        id: r.agent.id,
-        name: r.agent.name,
-        status: r.agent.status,
-        soul: r.soul?.name ?? "unknown",
-        intent: r.soul?.intent ?? null,
-        depth: r.agent.depth,
-        model: r.agent.model,
-        parent_id: r.agent.parentId,
-        has_heartbeat: !!r.agent.heartbeatIntervalSeconds,
-      })),
+      agents: results.map((r) => {
+        const agentTask = activeTasks.find((t) => t.assignedTo === r.agent.id);
+        return {
+          id: r.agent.id,
+          name: r.agent.name,
+          status: r.agent.status,
+          soul: r.soul?.name ?? "unknown",
+          intent: r.soul?.intent ?? null,
+          depth: r.agent.depth,
+          model: r.agent.model,
+          parent_id: r.agent.parentId,
+          has_heartbeat: !!r.agent.heartbeatIntervalSeconds,
+          last_heartbeat_at: r.agent.lastHeartbeatAt?.toISOString() ?? null,
+          current_checkpoint: r.agent.currentCheckpoint,
+          active_task: agentTask
+            ? {
+                id: agentTask.id,
+                title: agentTask.title,
+                status: agentTask.status,
+                progress_percent: agentTask.progressPercent,
+                checkpoint: agentTask.checkpoint,
+              }
+            : null,
+        };
+      }),
     };
   },
 });

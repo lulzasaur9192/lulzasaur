@@ -196,10 +196,12 @@ export async function buildContext(
  * Instead of summarizing the ENTIRE conversation, we:
  * 1. Take the existing rolling summary + oldest unsummarized messages
  * 2. Send only those to the LLM for summary update
- * 3. Keep the last N messages in full for immediate context
+ * 3. Keep recent messages that fit within 25% of context budget
  * This makes the summarization LLM call much cheaper.
  */
-const KEEP_RECENT_COUNT = 10;
+const MIN_KEEP_MESSAGES = 2;  // Always keep at least 2 messages
+const MAX_KEEP_MESSAGES = 10; // Never keep more than 10
+const KEEP_TOKEN_RATIO = 0.25; // Keep messages that fit in 25% of budget
 
 async function compactConversation(
   agentId: string,
@@ -220,18 +222,34 @@ async function compactConversation(
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId)).limit(1);
   const existingSummary = conv?.summary ?? null;
 
-  // Split messages: older ones to summarize, recent ones to keep in full
-  const toSummarize = messages.length > KEEP_RECENT_COUNT
-    ? messages.slice(0, -KEEP_RECENT_COUNT)
+  // Determine how many recent messages to keep based on token budget.
+  // Walk backwards from the end, accumulating tokens until we hit 25% of budget.
+  const keepBudget = contextBudget * KEEP_TOKEN_RATIO;
+  let keepCount = 0;
+  let keepTokens = 0;
+  for (let i = messages.length - 1; i >= 0 && keepCount < MAX_KEEP_MESSAGES; i--) {
+    const msgTokens = estimateMessagesTokens(conversationToLLM([messages[i]!]));
+    if (keepTokens + msgTokens > keepBudget && keepCount >= MIN_KEEP_MESSAGES) {
+      break; // Adding this message would exceed our keep budget
+    }
+    keepTokens += msgTokens;
+    keepCount++;
+  }
+  keepCount = Math.max(keepCount, MIN_KEEP_MESSAGES);
+
+  const toSummarize = messages.length > keepCount
+    ? messages.slice(0, -keepCount)
     : [];
-  const toKeep = messages.length > KEEP_RECENT_COUNT
-    ? messages.slice(-KEEP_RECENT_COUNT)
+  const toKeep = messages.length > keepCount
+    ? messages.slice(-keepCount)
     : messages;
 
   // If nothing to summarize, just return as-is
   if (toSummarize.length === 0) {
     return messages;
   }
+
+  log.info({ agentId, totalMessages: messages.length, keepCount, keepTokens, keepBudget }, "Compaction: keeping recent messages within token budget");
 
   // ── Pre-compaction knowledge extraction ──
   await extractKnowledgeBeforeCompaction(agentId, agent.name, toSummarize, agent.provider ?? "anthropic");

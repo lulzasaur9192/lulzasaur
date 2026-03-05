@@ -18,6 +18,7 @@ export const CORE_CAPABILITIES = [
   "bulletin_board",
   "knowledge_graph",
   "memory_blocks",
+  "update_task_progress",
 ] as const;
 
 const tools = new Map<string, ToolDefinition>();

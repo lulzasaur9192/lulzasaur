@@ -162,6 +162,7 @@ export async function updateAgentStatus(agentId: string, status: "idle" | "activ
       status,
       updatedAt: new Date(),
       ...(status === "terminated" ? { terminatedAt: new Date() } : {}),
+      ...(status === "idle" || status === "terminated" ? { currentCheckpoint: null } : {}),
     })
     .where(eq(agents.id, agentId));
 }

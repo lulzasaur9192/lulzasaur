@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { desc, gt, gte, eq, and, isNotNull, ne, sql } from "drizzle-orm";
+import { desc, gt, gte, eq, and, isNotNull, ne, sql, or } from "drizzle-orm";
 import { getDb } from "../../../db/client.js";
 import { heartbeatLog, agents, tasks, userInbox, tokenUsageLog } from "../../../db/schema.js";
 import { getPendingCount } from "../../../inbox/user-inbox.js";
@@ -241,7 +241,13 @@ activityRoutes.get("/stream", async (c) => {
         if (task.updatedAt > lastCheck) {
           await stream.writeSSE({
             event: "task_update",
-            data: JSON.stringify({ id: task.id, title: task.title, status: task.status }),
+            data: JSON.stringify({
+              id: task.id,
+              title: task.title,
+              status: task.status,
+              progress_percent: task.progressPercent,
+              checkpoint: task.checkpoint,
+            }),
           });
         }
       }
@@ -273,6 +279,42 @@ activityRoutes.get("/stream", async (c) => {
           }),
         });
       }
+
+      // System health summary
+      const allAgents = await db
+        .select()
+        .from(agents)
+        .where(ne(agents.status, "terminated" as any));
+      const activeTasks = await db
+        .select()
+        .from(tasks)
+        .where(
+          or(
+            eq(tasks.status, "pending" as any),
+            eq(tasks.status, "assigned" as any),
+            eq(tasks.status, "in_progress" as any),
+            eq(tasks.status, "review_pending" as any),
+          ),
+        );
+
+      const agentCounts: Record<string, number> = {};
+      for (const a of allAgents) {
+        agentCounts[a.status] = (agentCounts[a.status] ?? 0) + 1;
+      }
+      const taskCounts: Record<string, number> = {};
+      for (const t of activeTasks) {
+        taskCounts[t.status] = (taskCounts[t.status] ?? 0) + 1;
+      }
+
+      await stream.writeSSE({
+        event: "system_health",
+        data: JSON.stringify({
+          agents: agentCounts,
+          tasks: taskCounts,
+          total_agents: allAgents.length,
+          total_active_tasks: activeTasks.length,
+        }),
+      });
 
       lastCheck = new Date();
       await stream.sleep(2000);

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ── Soul Definition ────────────────────────────────────────────────
 
-const MAX_CAPABILITIES = 10;
+const MAX_CAPABILITIES = 15;
 
 const heartbeatScheduleSchema = z.object({
   name: z.string(),
@@ -30,7 +30,9 @@ export const soulSchema = z.object({
   persistent: z.boolean().default(false), // true = long-lived, false = one-shot (auto-terminate after task)
 }).check(
   (ctx) => {
-    if (ctx.value.capabilities.length > MAX_CAPABILITIES) {
+    // Orchestrators coordinate many tools — exempt them from the cap
+    const isOrchestrator = ctx.value.name.includes("orchestrator");
+    if (!isOrchestrator && ctx.value.capabilities.length > MAX_CAPABILITIES) {
       ctx.issues.push({
         code: "custom",
         message: `Soul "${ctx.value.name}" has ${ctx.value.capabilities.length} capabilities (max ${MAX_CAPABILITIES}). Narrow agents work better — trim to the essentials.`,

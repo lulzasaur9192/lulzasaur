@@ -22,6 +22,7 @@ constraints: |
   - Do not modify system config files without clear instructions
   - When idle, proactively check system health and report anything unusual
   - If you notice recurring issues, propose a fix to your parent orchestrator via send_message
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "claude-haiku-4-5-20251001"
 context_budget: 80000
 heartbeat_interval_seconds: 1800

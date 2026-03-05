@@ -93,6 +93,30 @@ export async function verifyTask(taskId: string, verified: boolean, notes?: stri
   log.info({ taskId, verified }, "Task verification updated");
 }
 
+export async function updateTaskProgress(
+  taskId: string,
+  progressPercent: number,
+  checkpoint?: string,
+  estimatedCompletionAt?: Date,
+) {
+  const db = getDb();
+  const clamped = Math.round(Math.max(0, Math.min(100, progressPercent)));
+
+  const updates: Record<string, unknown> = {
+    progressPercent: clamped,
+    updatedAt: new Date(),
+  };
+  if (checkpoint !== undefined) updates.checkpoint = checkpoint;
+  if (estimatedCompletionAt !== undefined) updates.estimatedCompletionAt = estimatedCompletionAt;
+
+  await db
+    .update(tasks)
+    .set(updates)
+    .where(eq(tasks.id, taskId));
+
+  log.info({ taskId, progressPercent: clamped, checkpoint }, "Task progress updated");
+}
+
 export async function getTask(taskId: string) {
   const db = getDb();
   const results = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);

@@ -429,6 +429,7 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
             .update(agents)
             .set({
               nextHeartbeatAt: new Date(Date.now() + heartbeatInterval * 1000),
+              lastHeartbeatAt: new Date(),
               updatedAt: new Date(),
             })
             .where(eq(agents.id, agent.id));
@@ -583,6 +584,8 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
         .update(agents)
         .set({
           nextHeartbeatAt: new Date(Date.now() + heartbeatInterval * 1000),
+          lastHeartbeatAt: new Date(),
+          currentCheckpoint: null,
           updatedAt: new Date(),
         })
         .where(eq(agents.id, agent.id));
@@ -624,6 +627,7 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
         .update(agents)
         .set({
           nextHeartbeatAt: new Date(Date.now() + heartbeatInterval * 1000),
+          lastHeartbeatAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(agents.id, agent.id));

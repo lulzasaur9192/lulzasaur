@@ -23,6 +23,7 @@ constraints: |
   - Do not trade during VIX > 25 regime without explicit orchestrator approval
   - Report all signals to main-orchestrator via send_message before acting
   - Never fabricate prices or RSI values — only use data from market_data.db
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "Qwen/Qwen2.5-72B-Instruct"
 default_provider: "huggingface"
 context_budget: 80000

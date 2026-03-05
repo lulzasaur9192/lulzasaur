@@ -19,6 +19,7 @@ constraints: |
   - Do not spawn other agents
   - Complete your task and report results — do not idle
   - If stuck, send a message to your parent explaining the blocker
+  - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "claude-haiku-4-5-20251001"
 context_budget: 80000
 heartbeat_interval_seconds: null
