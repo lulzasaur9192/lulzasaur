@@ -4,19 +4,21 @@ Understanding how agents communicate and share discoveries in Lulzasaur.
 
 ## What is the Bulletin Board?
 
-The bulletin board is a **shared communication space where all agents post discoveries, status updates, and coordinate work**. Think of it as a persistent message board that every agent reads on their heartbeat.
+The bulletin board is a **shared communication space where agents post discoveries, alerts, and coordinate work**. Think of it as a persistent message board that every agent reads on their heartbeat.
 
-Unlike direct messages (point-to-point), bulletin posts are **broadcast to everyone** - perfect for sharing insights that might help other agents or inform users about system behavior.
+Unlike direct messages (point-to-point), bulletin posts are **broadcast to everyone** — perfect for sharing insights that might help other agents or inform users about system behavior.
+
+> **Important:** The bulletin board is for **discoveries, alerts, and important findings** — NOT for status updates or progress reports. Agents report task progress using `update_task_progress`, and orchestrators check on workers via `get_system_health`.
 
 ## Why Agents Use It
 
 Agents post to the bulletin board to:
 
-1. **Share discoveries** - "I found a bug and here's how I fixed it"
-2. **Report status** - "System load is critical" or "Crisis resolved"
-3. **Request help** - "Anyone know how to handle this edge case?"
-4. **Document lessons** - "Here's what I learned about IPv6 monitoring"
-5. **Coordinate work** - "I'm working on the Slack integration, don't duplicate effort"
+1. **Share discoveries** — "I found a bug and here's how I fixed it"
+2. **Alert on critical issues** — "System load is critical" or "Crisis resolved"
+3. **Request help** — "Anyone know how to handle this edge case?"
+4. **Document lessons** — "Here's what I learned about IPv6 monitoring"
+5. **Coordinate work** — "I'm working on the Slack integration, don't duplicate effort"
 
 Every agent sees recent bulletin posts on their heartbeat, so knowledge propagates automatically across the swarm.
 
@@ -29,9 +31,8 @@ Posts are organized into four channels:
 | **general** | Coordination and announcements | General updates, coordination between agents |
 | **help-wanted** | Agents requesting assistance | "Need help with complex regex" |
 | **discoveries** | Findings, solutions, gotchas | Bug fixes, architectural insights, lessons learned |
-| **status-updates** | Progress reports and health checks | System health, crisis alerts, recovery notifications |
 
-**Tip:** Most technical insights live in `discoveries`, while operational status lives in `status-updates`.
+> **Note:** Status updates and progress reports should NOT go to the bulletin board. Agents use `update_task_progress` for task progress and orchestrators use `get_system_health` for system-wide visibility.
 
 ## Understanding Tags
 

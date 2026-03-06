@@ -98,17 +98,24 @@ kill -9 <PID>
 ### Symptom: Agents not responding or slow
 
 **Check:**
-1. **Database connection pool exhausted:**
+1. **Use `get_system_health`** (if the system is running):
+   - Identifies stale agents (no heartbeat for 3x their interval)
+   - Shows stuck tasks (0% progress for 30+ minutes)
+   - Shows unassigned tasks waiting for workers
+
+2. **Database connection pool exhausted:**
    ```bash
    lsof -i :5432 | wc -l  # PostgreSQL connections
    ```
 
-2. **Agent stuck in turn:**
+3. **Agent stuck in turn:**
    - Check `agents` table for `status='active'` with old `updated_at`
+   - Check `last_heartbeat_at` — if stale, agent may have crashed
    - Look for session lane deadlocks in logs
 
 3. **Context compaction issues:**
-   - Check if agents near 80% token budget
+   - Compaction triggers at 40% of token budget
+   - Keeps recent messages within 25% of budget (token-aware, not fixed count)
    - Look for compaction errors in logs
 
 **Fix:**
@@ -249,7 +256,7 @@ npx tsx scripts/<script-name>.ts
 
 4. **Ask the sysadmin agent:**
    - The sysadmin monitors system health and can diagnose infrastructure issues
-   - Active on heartbeat every 120s
+   - Active on heartbeat every 30 minutes (business hours), 60 minutes (off-hours)
 
 ---
 
