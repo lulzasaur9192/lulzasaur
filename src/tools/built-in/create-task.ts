@@ -77,7 +77,7 @@ registerTool({
         projectId,
         priority: params.priority ?? 0,
         input: params.input ?? null,
-        status: params.status ?? (assignedTo ? "assigned" : "pending"),
+        status: params.status === "planned" ? "planned" : (assignedTo ? "assigned" : "pending"),
         dependsOn: params.depends_on ?? [],
         suggestedSoul: params.suggested_soul ?? null,
       })

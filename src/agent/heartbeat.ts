@@ -153,7 +153,7 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
     const otherAgentPosts = bulletinPosts.filter((p) => p.post.authorAgentId !== agent.id);
 
     // ── Build heartbeat prompt with token budget ──
-    const HEARTBEAT_TOKEN_BUDGET = 4000;
+    const HEARTBEAT_TOKEN_BUDGET = 6000;
     const estimateTokens = (text: string) => Math.ceil(text.length / 4);
 
     // Collect context items with priority scores
@@ -186,21 +186,39 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
     // Assigned tasks — compact representation (priority: 80)
     if (assignedTasks.length > 0) {
       let taskText: string;
-      if (assignedTasks.length <= 5) {
+      if (assignedTasks.length === 1) {
+        // Single task: include full description (up to 1500 chars) so the agent can work without extra queries
+        const task = assignedTasks[0]!;
+        const descLimit = 1500;
+        const desc = task.description ?? "";
+        const descSnippet = desc.length > descLimit ? desc.substring(0, descLimit) + "..." : desc;
+        taskText = `\n## YOUR TASK:\n**[${task.status}] ${task.title}** (${task.id})`;
+        if (task.input) taskText += `\nInput: ${JSON.stringify(task.input).substring(0, 300)}`;
+        taskText += `\n\n${descSnippet}`;
+        if (task.progressPercent && task.progressPercent > 0) {
+          taskText += `\nProgress: ${task.progressPercent}%`;
+          if (task.checkpoint) taskText += ` — ${task.checkpoint}`;
+        }
+      } else if (assignedTasks.length <= 5) {
+        // Multiple tasks: show 500 chars of description each
         taskText = `\n## YOUR TASKS (${assignedTasks.length}):`;
         for (const task of assignedTasks) {
-          const descSnippet = task.description?.substring(0, 100) + (task.description && task.description.length > 100 ? "..." : "");
-          taskText += `\n- [${task.status}] ${task.title} (${task.id}): ${descSnippet}`;
+          const desc = task.description ?? "";
+          const descSnippet = desc.length > 500 ? desc.substring(0, 500) + "..." : desc;
+          taskText += `\n\n### [${task.status}] ${task.title} (${task.id})`;
+          taskText += `\n${descSnippet}`;
         }
       } else {
-        // Compact representation for many tasks
-        taskText = `\n## YOUR TASKS (${assignedTasks.length} active)\nTop priority:`;
-        for (const task of assignedTasks.slice(0, 3)) {
-          taskText += `\n${assignedTasks.indexOf(task) + 1}. ${task.title} (${task.id}) [${task.status}]`;
+        // Many tasks: compact representation with 200 chars each
+        taskText = `\n## YOUR TASKS (${assignedTasks.length} active):`;
+        for (const task of assignedTasks.slice(0, 5)) {
+          const desc = task.description ?? "";
+          const descSnippet = desc.length > 200 ? desc.substring(0, 200) + "..." : desc;
+          taskText += `\n- [${task.status}] ${task.title} (${task.id}): ${descSnippet}`;
         }
-        taskText += `\nUse query_tasks for full details.`;
+        if (assignedTasks.length > 5) taskText += `\n...and ${assignedTasks.length - 5} more. Use query_tasks for full details.`;
       }
-      taskText += "\nPick up where you left off.";
+      taskText += "\nThis is your primary work. Focus on completing these tasks.";
       contextItems.push({ priority: 80, text: taskText, tokens: estimateTokens(taskText), category: "tasks", count: assignedTasks.length });
 
       // ── D1: Inject prior attempts for assigned tasks (priority: 85) ──
@@ -266,8 +284,38 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
       contextItems.push({ priority: 10, text: bulText, tokens: estimateTokens(bulText), category: "bulletin", count: otherAgentPosts.length });
     }
 
+    // ── Shutdown checkpoint resume (priority: 95) ──
+    // Check if this agent has a shutdown checkpoint from a previous graceful shutdown
+    let hasShutdownCheckpoint = false;
+    try {
+      const [checkpoint] = await db
+        .select()
+        .from(agentMemory)
+        .where(and(
+          eq(agentMemory.agentId, agent.id),
+          eq(agentMemory.namespace, "system"),
+          eq(agentMemory.key, "shutdown_checkpoint"),
+        ))
+        .limit(1);
+
+      if (checkpoint) {
+        hasShutdownCheckpoint = true;
+        const cpValue = checkpoint.value as { reason?: string; timestamp?: string; active_task_ids?: string[] };
+        const resumeText =
+          `\n## [RESUMING AFTER SHUTDOWN] The system was shut down. Reason: ${cpValue.reason ?? "unknown"}.` +
+          `\nCheck your working_context memory block and assigned tasks to resume where you left off.`;
+        contextItems.push({ priority: 95, text: resumeText, tokens: estimateTokens(resumeText), category: "shutdown-resume", count: 1 });
+
+        // Delete the checkpoint so it only fires once
+        await db.delete(agentMemory).where(eq(agentMemory.id, checkpoint.id));
+        log.info({ agentId: agent.id, reason: cpValue.reason }, "Injected shutdown resume context and cleared checkpoint");
+      }
+    } catch (cpError) {
+      log.warn({ agentId: agent.id, error: cpError }, "Failed to check shutdown checkpoint");
+    }
+
     // ── Compute reactive-work booleans early (used for auto-inject gating + proactive phase) ──
-    const hasReactiveWork = unreadMessages.length > 0 || rejectedTasks.length > 0 || assignedTasks.length > 0;
+    const hasReactiveWork = unreadMessages.length > 0 || rejectedTasks.length > 0 || assignedTasks.length > 0 || hasShutdownCheckpoint;
     const hasDelegatedWork = delegatedTasks.length > 0;
     const hasReviewsPending = reviewPendingTasks.length > 0;
     const hasBulletinPosts = otherAgentPosts.length > 0;
@@ -463,10 +511,7 @@ export async function runHeartbeat(agent: typeof agents.$inferSelect): Promise<v
           .limit(1);
         if (soulDef) soulCaps = soulDef.capabilities as string[];
       }
-      const canMessageUser = soulCaps.includes("message_user");
-      const escalationAdvice = canMessageUser
-        ? "- Should you propose a new project or initiative to the user? (use message_user with type 'proposal')"
-        : "- Should you share discoveries or status updates? Post to the bulletin_board so the orchestrator and other agents can see.";
+      const escalationAdvice = "- Should you share discoveries or status updates? Post to the bulletin_board so the orchestrator and other agents can see.";
 
       parts.push(
         "\nThis is your once-daily chance to propose initiatives. Consider:",
