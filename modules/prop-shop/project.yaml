@@ -1,0 +1,15 @@
+name: prop-shop
+display_name: Prop Shop Trading
+description: >
+  Autonomous swing options trading system that continuously discovers profitable
+  patterns in real market data, validates them via backtesting, executes trades
+  via Tastytrade API, and learns from every outcome. Targets SOFI, PLTR, XLF,
+  RIOT, GDX with 2-5 day holding periods. Paper trading first, live after
+  30+ trades with >55% win rate sustained.
+
+config:
+  slack_channels:
+    general: prop-shop
+    alerts: prop-shop-alerts
+    trading: prop-shop-trading
+    research: prop-shop-research

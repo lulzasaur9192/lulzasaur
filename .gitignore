@@ -8,7 +8,15 @@ dist/
 drizzle/
 tmp-pg/
 projects/
-modules/
+modules/*/data/
+modules/*/logs/
+modules/*/reports/
+modules/*/research/
+modules/*/.venv/
+modules/*/.env
+modules/*/backtest_*.csv
+modules/*/backtest_*.json
+modules/*/agent.db
 credentials/
 *.pem
 *.key
