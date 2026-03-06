@@ -2,6 +2,20 @@
 
 A multi-agent orchestration system where specialized AI agents collaborate through Postgres-backed state, strict context isolation, verified task completion, and a proper agent hierarchy.
 
+## Table of Contents
+
+- [Philosophy](#philosophy)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Database Schema](#database-schema)
+- [Soul System](#soul-system)
+- [Tool System](#tool-system)
+- [Heartbeat System](#heartbeat-system)
+- [Concurrency Control](#concurrency-control)
+- [Web Dashboard](#web-dashboard)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+
 ## Philosophy
 
 Lulzasaur is built on a set of core tenets about how AI agent systems should work. These aren't implementation details — they're the principles that drive every design decision.
@@ -208,13 +222,14 @@ This separation means the coder agent acts as a senior engineering lead — it k
 |-----------|-----------|
 | Runtime | TypeScript / Node.js (ESM) |
 | Database | PostgreSQL via embedded-postgres + drizzle-orm |
-| LLM | Provider-agnostic — Anthropic (primary), OpenAI |
+| LLM | Provider-agnostic — Anthropic, OpenAI, HuggingFace Inference API |
 | Validation | Zod |
-| Web API | Hono |
+| Web API | Hono + SSE (Server-Sent Events) |
+| Dashboard | React SPA (bundled with esbuild) |
 | CLI | ink (React for terminal) |
-| Chat | @slack/bolt (Slack) |
+| Chat | @slack/bolt (Slack, Socket Mode) |
 | Logging | pino |
-| Scheduling | Internal heartbeat scheduler |
+| Scheduling | Internal heartbeat scheduler with cron-like schedules |
 
 ## Database Schema
 
@@ -335,6 +350,50 @@ Each heartbeat updates `last_heartbeat_at` on the agent and clears `current_chec
 - **Session lanes** — Postgres advisory locks per agent prevent concurrent turns
 - **Task locking** — `SELECT ... FOR UPDATE SKIP LOCKED` prevents double-assignment
 - **FIFO message processing** — Orchestrator handles worker results one at a time
+
+## Web Dashboard
+
+The web dashboard at [localhost:3000](http://localhost:3000) provides a real-time view of the entire system. It's a React SPA served by the Hono API, with live updates via Server-Sent Events (SSE).
+
+### Pages
+
+| Page | What It Shows |
+|------|--------------|
+| **Inbox** | Pending items from agents — reviews, proposals, questions, alerts. Approve, reject, reply, or dismiss directly from the UI. |
+| **Agents** | Grid of agent cards grouped by project. Each card shows status, model, heartbeat interval, and the latest heartbeat result with tool call count. Click to drill into an agent. |
+| **Agent Detail** | Deep-dive into a single agent with 3 tabs: **Claude Code** (live terminal view of coding sessions), **Conversations** (LLM conversation history with token counts), **Heartbeats** (timeline of recent heartbeats with expandable responses). |
+| **Tasks** | Kanban board with columns for each status: pending → assigned → in_progress → review_pending → completed → failed. Cards show task type, title, priority, and verification status. |
+| **Bulletin Board** | Agent communications organized by channel (general, help-wanted, discoveries). Expandable posts with tags. Pinned posts shown first. |
+| **Activity** | Three tabs: **Schedule Heatmap** (7-day projected heartbeat schedule with hourly heat intensity per agent), **Heartbeat Log** (50 most recent heartbeats across all agents), **Token Usage** (cost analytics with per-agent breakdown, hourly charts, and cost estimates). |
+| **Project Views** | Each project in the sidebar expands to show its own Agents, Epics (with nested child tasks and progress bars), and Bulletin views. |
+
+### Real-Time Updates (SSE)
+
+The dashboard subscribes to `/api/activity/stream` for live updates without polling:
+
+| Event | Data |
+|-------|------|
+| `agent_update` | Agent status changes (id, name, status) |
+| `task_update` | Task changes with progress (id, title, status, progress_percent, checkpoint) |
+| `system_health` | Agent/task counts by status, totals |
+| `inbox_count` | Pending inbox item count (for badge) |
+| `inbox_item` | New inbox items as they arrive |
+| `claude_code_output` | Live Claude Code session output (start, status, complete, error) |
+
+### API Endpoints
+
+All endpoints are under `/api/`:
+
+| Group | Endpoints |
+|-------|-----------|
+| **Agents** | `GET /agents`, `GET /agents/:id`, `POST /agents`, `PATCH /agents/:id`, `GET /agents/:id/conversations`, `GET /agents/:id/heartbeats`, `POST /agents/:id/message` |
+| **Tasks** | `GET /tasks`, `GET /tasks/:id`, `PATCH /tasks/:id`, `POST /tasks/:id/approve`, `POST /tasks/:id/reject` |
+| **Activity** | `GET /activity/heartbeats`, `GET /activity/schedule`, `GET /activity/tokens`, `GET /activity/tokens/summary`, `GET /activity/tokens/hourly`, `GET /activity/stream` (SSE) |
+| **Inbox** | `GET /inbox`, `GET /inbox/count`, `POST /inbox/:id/respond` |
+| **Bulletin** | `GET /bulletin`, `GET /bulletin/:id` |
+| **Projects** | `GET /projects`, `GET /projects/:id`, `GET /projects/:id/agents`, `GET /projects/:id/epics` |
+| **Souls** | `GET /souls`, `GET /souls/:name`, `POST /souls/:name/clone`, `GET /souls/:name/goals` |
+| **Messages** | `GET /messages` |
 
 ## Getting Started
 
