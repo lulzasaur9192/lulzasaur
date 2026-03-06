@@ -4,6 +4,7 @@ import { tasks, agents, soulDefinitions, knowledgeEntities } from "../../db/sche
 import { updateAgentStatus } from "../../agent/registry.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
+import { resolveTaskId } from "../resolve-task.js";
 
 const log = createChildLogger("tool-complete-task");
 
@@ -29,6 +30,13 @@ registerTool({
   execute: async (agentId: string, input: unknown) => {
     const db = getDb();
     const params = input as CompleteTaskInput;
+
+    // Resolve task ID prefix to full UUID
+    try {
+      params.task_id = await resolveTaskId(params.task_id);
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
 
     const [task] = await db
       .select()

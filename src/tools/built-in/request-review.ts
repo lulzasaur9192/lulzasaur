@@ -4,6 +4,7 @@ import { tasks, messages, agents } from "../../db/schema.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
 import { createInboxItem, dismissStaleItemsForTask } from "../../inbox/user-inbox.js";
+import { resolveTaskId } from "../resolve-task.js";
 
 const log = createChildLogger("tool-request-review");
 
@@ -63,6 +64,13 @@ registerTool({
   },
   execute: async (agentId: string, input: any) => {
     const db = getDb();
+
+    // Resolve task ID prefix to full UUID
+    try {
+      input.task_id = await resolveTaskId(input.task_id);
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
 
     // Find the task
     const [task] = await db

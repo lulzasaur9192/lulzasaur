@@ -3,6 +3,7 @@ import { getDb } from "../../db/client.js";
 import { tasks, agents } from "../../db/schema.js";
 import { updateTaskProgress } from "../../tasks/task-manager.js";
 import { registerTool } from "../tool-registry.js";
+import { resolveTaskId } from "../resolve-task.js";
 
 interface UpdateTaskProgressInput {
   task_id: string;
@@ -30,6 +31,13 @@ registerTool({
   execute: async (agentId: string, input: unknown) => {
     const db = getDb();
     const params = input as UpdateTaskProgressInput;
+
+    // Resolve task ID prefix to full UUID
+    try {
+      params.task_id = await resolveTaskId(params.task_id);
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
 
     // Validate task is assigned to this agent
     const [task] = await db

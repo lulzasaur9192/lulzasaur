@@ -3,6 +3,7 @@ import { messages } from "../../db/schema.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
 import { resolveAgentId } from "../resolve-agent.js";
+import { resolveTaskId } from "../resolve-task.js";
 
 const log = createChildLogger("tool-send-message");
 
@@ -38,13 +39,24 @@ registerTool({
     // Resolve name/prefix to full UUID
     const recipientId = await resolveAgentId(params.to_agent_id);
 
+    // Resolve task ID prefix to full UUID if provided
+    let taskId: string | null = null;
+    if (params.task_id) {
+      try {
+        taskId = await resolveTaskId(params.task_id);
+      } catch {
+        // Non-critical — send message without task link
+        taskId = null;
+      }
+    }
+
     const [msg] = await db
       .insert(messages)
       .values({
         type: params.type,
         fromAgentId: agentId,
         toAgentId: recipientId,
-        taskId: params.task_id ?? null,
+        taskId,
         content: params.content,
       })
       .returning();
