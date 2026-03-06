@@ -213,7 +213,7 @@ export async function runAgentTurn(
           } catch (err) {
             error = err instanceof Error ? err.message : String(err);
             output = { error };
-            log.warn({ agentId, tool: toolBlock.name, error }, "Tool execution failed");
+            log.warn({ agentId, agentName: agent.name, tool: toolBlock.name, error }, "Tool execution failed");
           }
 
           toolCalls.push({
@@ -234,7 +234,7 @@ export async function runAgentTurn(
         }
       } catch (unexpectedError) {
         // If the tool loop itself throws unexpectedly, fill in error results for any missing tools
-        log.error({ agentId, error: String(unexpectedError) }, "Unexpected error in tool execution loop");
+        log.error({ agentId, agentName: agent.name, error: String(unexpectedError) }, "Unexpected error in tool execution loop");
         for (const toolBlock of toolUseBlocks) {
           if (!toolResultBlocks.some((r) => r.tool_use_id === toolBlock.id)) {
             toolResultBlocks.push({
@@ -272,7 +272,7 @@ export async function runAgentTurn(
       const budget = agent.contextBudget ?? 150000;
       const midTurnEstimate = estimateMessagesTokens(currentMessages);
       if (midTurnEstimate > budget * 0.7) {
-        log.warn({ agentId, midTurnEstimate, budget, iteration }, "Mid-turn context near budget, stopping tool loop");
+        log.warn({ agentId, agentName: agent.name, midTurnEstimate, budget, iteration }, "Mid-turn context near budget, stopping tool loop");
         finalResponse = textBlocks.join("\n");
         break;
       }
@@ -281,7 +281,7 @@ export async function runAgentTurn(
     }
 
     if (iteration >= maxIterations) {
-      log.warn({ agentId, iterations: iteration }, "Agent hit max tool iterations");
+      log.warn({ agentId, agentName: agent.name, iterations: iteration }, "Agent hit max tool iterations");
       finalResponse += "\n[Reached maximum tool call iterations]";
     }
 
@@ -338,7 +338,7 @@ export async function runAgentTurn(
     return result;
   } catch (error) {
     await updateAgentStatus(agentId, "idle");
-    log.error({ agentId, error: String(error) }, "Agent turn failed");
+    log.error({ agentId, agentName: agent.name, error: String(error) }, "Agent turn failed");
     throw error;
   }
 }

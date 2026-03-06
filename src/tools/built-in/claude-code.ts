@@ -4,7 +4,7 @@ import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
 import { claudeCodeStream } from "../../integrations/claude-code-stream.js";
 import { getDb } from "../../db/client.js";
-import { agentMemory } from "../../db/schema.js";
+import { agentMemory, agents } from "../../db/schema.js";
 
 const log = createChildLogger("tool-claude-code");
 
@@ -13,6 +13,7 @@ const CLAUDE_BIN = process.env.CLAUDE_BIN ?? "claude";
 
 // Default timeout: 5 minutes (coding tasks can take a while)
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
+const MIN_TIMEOUT_MS = 3 * 60 * 1000; // Floor: never less than 3 minutes
 const MAX_TIMEOUT_MS = 15 * 60 * 1000;
 
 // Default budget cap per invocation
@@ -175,7 +176,7 @@ registerTool({
       },
       timeout_ms: {
         type: "number",
-        description: "Timeout in milliseconds (default: 300000 = 5 min, max: 900000 = 15 min)",
+        description: "Timeout in milliseconds (default: 300000 = 5 min, min: 180000 = 3 min, max: 900000 = 15 min)",
       },
       model: {
         type: "string",
@@ -192,12 +193,18 @@ registerTool({
     const params = input as ClaudeCodeInput;
     const startTime = Date.now();
 
+    // Resolve agent name for logging
+    const db = getDb();
+    const [callerAgent] = await db.select({ name: agents.name }).from(agents).where(eq(agents.id, callerAgentId)).limit(1);
+    const agentName = callerAgent?.name ?? callerAgentId.substring(0, 8);
+
     const args = buildArgs(params);
-    const timeout = Math.min(params.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
+    const timeout = Math.max(MIN_TIMEOUT_MS, Math.min(params.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS));
     const cwd = params.working_directory ?? process.cwd();
 
     log.info(
       {
+        agentName,
         prompt: params.prompt.substring(0, 100),
         cwd,
         timeout,
@@ -283,7 +290,7 @@ registerTool({
           });
           writeStatusToMemory(callerAgentId, `timed_out | ${Math.round(durationMs / 1000)}s`);
 
-          log.warn({ durationMs, timeout }, "Claude Code timed out");
+          log.warn({ agentName, durationMs, timeout }, "Claude Code timed out");
           return resolve({
             error: "Claude Code timed out",
             duration_ms: durationMs,
@@ -300,7 +307,7 @@ registerTool({
           });
           writeStatusToMemory(callerAgentId, `error | exit code ${code}`);
 
-          log.warn({ code, stderr: stderr.substring(0, 500) }, "Claude Code error");
+          log.warn({ agentName, code, stderr: stderr.substring(0, 500) }, "Claude Code error");
           return resolve({
             error: `Process exited with code ${code}`,
             stderr: stderr.substring(0, 2000),
@@ -344,7 +351,7 @@ registerTool({
         });
         writeStatusToMemory(callerAgentId, `error | ${err.message.substring(0, 80)}`);
 
-        log.warn({ error: err.message }, "Claude Code spawn error");
+        log.warn({ agentName, error: err.message }, "Claude Code spawn error");
         return resolve({
           error: err.message,
           duration_ms: durationMs,

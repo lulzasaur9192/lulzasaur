@@ -14,7 +14,6 @@ import "./built-in/evaluate-goals.js";
 import "./built-in/query-agents.js";
 import "./built-in/claude-code.js";
 import "./built-in/request-review.js";
-import "./built-in/message-user.js";
 import "./built-in/bulletin-board.js";
 import "./built-in/kg-store.js";
 import "./built-in/kg-search.js";
@@ -26,6 +25,9 @@ import "./built-in/update-task-progress.js";
 import "./built-in/get-system-health.js";
 import "./built-in/web-search.js";
 import "./built-in/web-fetch.js";
+import "./built-in/graceful-shutdown.js";
+import "./built-in/trash.js";
+import "./built-in/approve-plan.js";
 
 export { registerTool, getTool, listTools } from "./tool-registry.js";
 export { executeToolCall, getToolsForAgent } from "./tool-executor.js";

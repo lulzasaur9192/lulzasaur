@@ -12,6 +12,7 @@ A multi-agent orchestration system where specialized AI agents collaborate throu
 - [Tool System](#tool-system)
 - [Heartbeat System](#heartbeat-system)
 - [Concurrency Control](#concurrency-control)
+- [Planner Agent + Task Dispatcher](#planner-agent--task-dispatcher)
 - [Web Dashboard](#web-dashboard)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
@@ -55,7 +56,7 @@ goals:
 
 The single biggest failure mode of AI agent systems is losing state when conversation context fills up. Lulzasaur puts **everything** in Postgres:
 
-- **Tasks** — with full lifecycle tracking (pending → assigned → in_progress → review_pending → completed) and structured progress (percent, checkpoint, ETA)
+- **Tasks** — with full lifecycle tracking (planned → pending → assigned → in_progress → review_pending → completed) and structured progress (percent, checkpoint, ETA), dependency tracking, and suggested soul assignment
 - **Messages** — with delivery/read/acknowledgment timestamps
 - **Agent memory** — persistent key-value store that survives context compaction
 - **Conversations** — with token counts and compaction support
@@ -90,7 +91,7 @@ Agents don't sit idle waiting for instructions. On each heartbeat, after handlin
 
 - Consider their prime directive and goals
 - Look at what other agents are sharing on the bulletin board
-- Propose new projects or initiatives to the user via `message_user`
+- Propose new projects or initiatives to the user via `request_user_review`
 - Check on things in their domain (files, systems, data)
 
 The key constraint: **do NOT invent busywork**. Only act if there's a genuinely useful idea. Agents that have nothing to propose go back to sleep — that's fine.
@@ -132,11 +133,13 @@ This replaces the pattern of reading the bulletin board for status checks, which
 
 The main orchestrator's job is routing and verification. It:
 - Breaks user requests into tasks
-- Finds or spawns the right specialized agent
+- For simple tasks: finds or spawns the right specialized agent directly
+- For complex multi-step projects (3+ steps): spawns a **planner agent** to create a structured task breakdown with dependencies
 - Monitors progress via `get_system_health` — only wakes agents if they're stale or stuck
 - Verifies results before reporting to the user
+- Handles coding tasks directly via Claude Code for efficiency
 
-It never writes code, researches topics, or edits files directly. If it needs something done, it delegates.
+It never writes code, researches topics, or edits files directly (except via Claude Code). If it needs something done, it delegates.
 
 ### 11. Two Kinds of Agents
 
@@ -237,7 +240,7 @@ This separation means the coder agent acts as a senior engineering lead — it k
 |-------|---------|
 | `soul_definitions` | Reusable agent personality/purpose templates (YAML-backed) |
 | `agents` | Runtime agent instances — status, depth, model, heartbeat schedule, last heartbeat, current checkpoint |
-| `tasks` | Durable work units with full lifecycle, verification status, progress %, checkpoint, ETA |
+| `tasks` | Durable work units with full lifecycle, verification status, progress %, checkpoint, ETA, dependency tracking (`depends_on`), and soul recommendation (`suggested_soul`) |
 | `messages` | Typed inter-agent messages with delivery/read/ack tracking |
 | `conversations` | Agent LLM conversation history with token counts + compaction |
 | `agent_memory` | Persistent key-value store per agent (namespaced) |
@@ -247,7 +250,7 @@ This separation means the coder agent acts as a senior engineering lead — it k
 | `knowledge_entities` | Knowledge graph entities with confidence scoring |
 | `knowledge_relations` | Typed relationships between knowledge entities |
 | `goal_evaluations` | Tracked pass/fail goal assessments per agent |
-| `user_inbox` | Human-in-the-loop items (reviews, proposals, questions, alerts) |
+| `system_trash` | Soft-deleted items (messages, tasks, bulletin posts) with restore support |
 | `token_usage_log` | Token usage tracking per agent/model for cost analysis |
 
 ## Soul System
@@ -281,7 +284,8 @@ persistent: false                                  # true = long-lived
 
 | Soul | Intent | Caps | Heartbeat | Persistent |
 |------|--------|------|-----------|------------|
-| `main-orchestrator` | Route requests, delegate, verify | 11 + core | 600s (scheduled) | Yes |
+| `main-orchestrator` | Route requests, delegate, verify | 12 + core | 600s (scheduled) | Yes |
+| `planner` | Decompose complex requirements into dependency-aware task plans | 9 | None | No |
 | `sub-orchestrator` | Handle scoped sub-problems | 5 + core | None | No |
 | `coder` | Write/debug code via Claude Code | 5 + core | None | No |
 | `researcher` | Gather info, produce findings | 4 + core | 900s (scheduled) | Yes |
@@ -324,6 +328,7 @@ Agents interact with the world through tools. Each tool requires a capability, a
 | `spawn_agent` | `spawn_agent` | Create a new agent with a soul |
 | `query_agents` | `query_agents` | Find agents by status/soul/parent |
 | `send_message` | `send_message` | Send typed message to another agent |
+| `approve_plan` | `approve_plan` | Approve a plan epic, activating its planned child tasks |
 | `read_memory` | `read_memory` | Read from persistent agent memory |
 | `write_memory` | `write_memory` | Write to persistent agent memory |
 | `evaluate_goals` | `evaluate_goals` | Track goal pass/fail with evidence |
@@ -347,7 +352,6 @@ Agents interact with the world through tools. Each tool requires a capability, a
 | Tool | Capability | What It Does |
 |------|-----------|-------------|
 | `request_user_review` | `request_user_review` | Submit work for user approval |
-| `message_user` | `message_user` | Send proposal/update/question/alert to user |
 | `post_bulletin` | `bulletin_board` | Post to shared agent bulletin board |
 | `read_bulletin` | `bulletin_board` | Read bulletin board posts |
 
@@ -367,6 +371,108 @@ Each heartbeat updates `last_heartbeat_at` on the agent and clears `current_chec
 - **Task locking** — `SELECT ... FOR UPDATE SKIP LOCKED` prevents double-assignment
 - **FIFO message processing** — Orchestrator handles worker results one at a time
 
+## Planner Agent + Task Dispatcher
+
+For complex multi-step projects, Lulzasaur uses a dedicated planning phase and automated task dispatching instead of ad-hoc task decomposition.
+
+### The Problem
+
+Without structured planning, long-lived multi-step tasks get stuck because:
+1. Task decomposition is ad-hoc — the LLM decides on the fly during a heartbeat
+2. There's no dependency ordering between tasks
+3. Task completion doesn't trigger anything — the orchestrator only notices on its next heartbeat (up to 10-30 min)
+
+### How It Works
+
+```
+User Request → Orchestrator → Planner Agent → Epic + Tasks (planned)
+                                                    ↓
+                                            User Approves Plan
+                                                    ↓
+                                        Tasks move to "pending"
+                                                    ↓
+                                    Task Dispatcher assigns agents
+                                                    ↓
+                              Agents work (respecting dependency order)
+                                                    ↓
+                                    Epic auto-completes when done
+```
+
+### Task Lifecycle with Planning
+
+Tasks now support a `planned` status that sits before `pending`:
+
+```
+planned → pending → assigned → in_progress → review_pending → completed
+                                                              → failed
+                                                              → cancelled
+```
+
+- **planned**: Created by planner, awaiting user approval. Not visible to the dispatcher.
+- **pending**: Approved and ready. The dispatcher picks these up automatically.
+
+### Planner Agent
+
+The planner (`souls/planner.yaml`) is a non-persistent agent spawned by the orchestrator for complex requests. It:
+
+1. Analyzes the requirement
+2. Creates an **epic** (parent task container) via `create_task`
+3. Creates child tasks under the epic with:
+   - `status: "planned"` — awaiting approval
+   - `suggested_soul` — which specialist should handle it (`coder`, `researcher`, `writer`, `worker-generic`)
+   - `depends_on` — task IDs that must complete first (enables dependency ordering)
+   - Detailed descriptions with acceptance criteria
+4. Submits for user review via `request_user_review`
+
+### Task Dispatcher
+
+The dispatcher (`src/tasks/task-dispatcher.ts`) runs automatically at the end of every heartbeat poll cycle. It:
+
+1. **Finds ready tasks**: Queries all `pending` tasks, checks their `depends_on` arrays, and filters to tasks whose dependencies are all resolved (completed, failed, cancelled, or deleted)
+2. **Dispatches tasks**: For each ready task:
+   - Reads `suggested_soul` (fallback: `worker-generic`)
+   - For persistent souls (researcher, sysadmin): finds an existing idle agent and wakes it
+   - For one-shot souls: spawns a new child agent
+   - Uses optimistic locking (`WHERE status = 'pending'`) to prevent double-dispatch
+3. **Handles failures**: On spawn failure, logs the error, notifies the orchestrator, and leaves the task pending for retry on the next cycle
+
+The dispatcher also runs when:
+- A plan is approved (tasks transition from `planned` → `pending`)
+- A task completes (may unblock dependent tasks)
+
+### Plan Approval
+
+Plans can be approved three ways:
+
+| Method | How |
+|--------|-----|
+| **Web dashboard** | `POST /api/tasks/:id/approve` on the epic |
+| **CLI** | `/approve <epic-id>` |
+| **Orchestrator** | `approve_plan` tool (for straightforward plans) |
+
+Approval transitions all `planned` children to `pending` and sets the epic to `in_progress`. The dispatcher immediately picks up newly pending tasks.
+
+### Epic Completion Rollup
+
+When all child tasks under an epic reach a terminal state (completed, failed, cancelled), the epic auto-completes:
+- Sets progress to 100%
+- Records how many tasks succeeded vs failed
+- Sends an `epic_completed` message to the orchestrator
+
+### New Schema Fields
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `tasks.depends_on` | `jsonb (string[])` | Task IDs this task depends on |
+| `tasks.suggested_soul` | `text` | Recommended soul type for the dispatcher |
+
+### Edge Cases
+
+- **Circular deps**: Detected and logged as warnings — tasks won't auto-fail but will stay pending
+- **All tasks fail**: Epic still auto-completes with failure count; orchestrator gets notified and can re-plan
+- **Double dispatch**: Prevented by optimistic locking on `WHERE status = 'pending'`
+- **Mid-flight changes**: Orchestrator can create/cancel tasks under an epic; dispatcher re-evaluates every cycle
+
 ## Web Dashboard
 
 The web dashboard at [localhost:3000](http://localhost:3000) provides a real-time view of the entire system. It's a React SPA served by the Hono API, with live updates via Server-Sent Events (SSE).
@@ -375,10 +481,9 @@ The web dashboard at [localhost:3000](http://localhost:3000) provides a real-tim
 
 | Page | What It Shows |
 |------|--------------|
-| **Inbox** | Pending items from agents — reviews, proposals, questions, alerts. Approve, reject, reply, or dismiss directly from the UI. |
 | **Agents** | Grid of agent cards grouped by project. Each card shows status, model, heartbeat interval, and the latest heartbeat result with tool call count. Click to drill into an agent. |
 | **Agent Detail** | Deep-dive into a single agent with 3 tabs: **Claude Code** (live terminal view of coding sessions), **Conversations** (LLM conversation history with token counts), **Heartbeats** (timeline of recent heartbeats with expandable responses). |
-| **Tasks** | Kanban board with columns for each status: pending → assigned → in_progress → review_pending → completed → failed. Cards show task type, title, priority, and verification status. |
+| **Tasks** | Kanban board with columns for each status: planned → pending → assigned → in_progress → review_pending → completed → failed. Cards show task type, title, priority, and verification status. Plan epics can be approved directly from the task view. |
 | **Bulletin Board** | Agent communications organized by channel (general, help-wanted, discoveries). Expandable posts with tags. Pinned posts shown first. |
 | **Activity** | Three tabs: **Schedule Heatmap** (7-day projected heartbeat schedule with hourly heat intensity per agent), **Heartbeat Log** (50 most recent heartbeats across all agents), **Token Usage** (cost analytics with per-agent breakdown, hourly charts, and cost estimates). |
 | **Project Views** | Each project in the sidebar expands to show its own Agents, Epics (with nested child tasks and progress bars), and Bulletin views. |
@@ -392,8 +497,6 @@ The dashboard subscribes to `/api/activity/stream` for live updates without poll
 | `agent_update` | Agent status changes (id, name, status) |
 | `task_update` | Task changes with progress (id, title, status, progress_percent, checkpoint) |
 | `system_health` | Agent/task counts by status, totals |
-| `inbox_count` | Pending inbox item count (for badge) |
-| `inbox_item` | New inbox items as they arrive |
 | `claude_code_output` | Live Claude Code session output (start, status, complete, error) |
 
 ### API Endpoints
@@ -405,7 +508,6 @@ All endpoints are under `/api/`:
 | **Agents** | `GET /agents`, `GET /agents/:id`, `POST /agents`, `PATCH /agents/:id`, `GET /agents/:id/conversations`, `GET /agents/:id/heartbeats`, `POST /agents/:id/message` |
 | **Tasks** | `GET /tasks`, `GET /tasks/:id`, `PATCH /tasks/:id`, `POST /tasks/:id/approve`, `POST /tasks/:id/reject` |
 | **Activity** | `GET /activity/heartbeats`, `GET /activity/schedule`, `GET /activity/tokens`, `GET /activity/tokens/summary`, `GET /activity/tokens/hourly`, `GET /activity/stream` (SSE) |
-| **Inbox** | `GET /inbox`, `GET /inbox/count`, `POST /inbox/:id/respond` |
 | **Bulletin** | `GET /bulletin`, `GET /bulletin/:id` |
 | **Projects** | `GET /projects`, `GET /projects/:id`, `GET /projects/:id/agents`, `GET /projects/:id/epics` |
 | **Souls** | `GET /souls`, `GET /souls/:name`, `POST /souls/:name/clone`, `GET /souls/:name/goals` |
@@ -649,12 +751,12 @@ lulzasaur/
 ├── .env.example
 ├── souls/                          # YAML soul definitions
 │   ├── orchestrator.yaml
+│   ├── planner.yaml
 │   ├── sub-orchestrator.yaml
 │   ├── coder.yaml
 │   ├── researcher.yaml
 │   ├── writer.yaml
 │   ├── sysadmin.yaml
-│   ├── trading-agent.yaml
 │   └── worker-generic.yaml
 ├── modules/                        # Project modules (YAML + workspaces)
 ├── src/
@@ -673,9 +775,9 @@ lulzasaur/
 │   │   ├── soul.ts                 # Soul loading, sync, system prompt building
 │   │   └── types.ts                # Zod schemas, shared types
 │   ├── tasks/
-│   │   └── task-manager.ts         # Task CRUD + state machine + progress tracking
-│   ├── inbox/
-│   │   └── user-inbox.ts           # User inbox management
+│   │   ├── task-manager.ts         # Task CRUD + state machine + progress tracking
+│   │   ├── task-dispatcher.ts      # Auto-dispatch ready tasks to agents (dependency-aware)
+│   │   └── types.ts                # TaskStatus, VerificationStatus types
 │   ├── llm/
 │   │   ├── provider.ts             # Abstract LLMProvider interface
 │   │   ├── registry.ts             # Provider resolution

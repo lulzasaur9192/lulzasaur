@@ -1,6 +1,6 @@
 import { eq, and, isNull } from "drizzle-orm";
 import { getDb } from "../../db/client.js";
-import { tasks, agents, soulDefinitions, knowledgeEntities } from "../../db/schema.js";
+import { tasks, agents, soulDefinitions, knowledgeEntities, messages } from "../../db/schema.js";
 import { updateAgentStatus } from "../../agent/registry.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
@@ -118,6 +118,74 @@ registerTool({
     } catch (attemptError) {
       log.warn({ taskId: params.task_id, error: attemptError }, "Failed to save task attempt to KG");
     }
+
+    // Epic completion rollup
+    if (task.parentTaskId) {
+      try {
+        const siblings = await db
+          .select({ id: tasks.id, status: tasks.status })
+          .from(tasks)
+          .where(eq(tasks.parentTaskId, task.parentTaskId));
+
+        const allTerminal = siblings.every((s) =>
+          s.id === params.task_id
+            ? true
+            : ["completed", "failed", "cancelled"].includes(s.status),
+        );
+
+        if (allTerminal) {
+          const [parent] = await db
+            .select()
+            .from(tasks)
+            .where(eq(tasks.id, task.parentTaskId))
+            .limit(1);
+
+          if (parent?.type === "epic" && parent.status !== "completed") {
+            const failedCount = siblings.filter(
+              (s) => (s.id === params.task_id ? status : s.status) === "failed",
+            ).length;
+
+            await db
+              .update(tasks)
+              .set({
+                status: "completed",
+                completedAt: new Date(),
+                updatedAt: new Date(),
+                progressPercent: 100,
+                result: {
+                  summary: `All ${siblings.length} tasks done. ${failedCount} failed.`,
+                  auto_completed: true,
+                },
+              })
+              .where(eq(tasks.id, task.parentTaskId));
+
+            // Notify orchestrator
+            if (parent.createdBy) {
+              await db.insert(messages).values({
+                type: "task_result",
+                fromAgentId: agentId,
+                toAgentId: parent.createdBy,
+                taskId: task.parentTaskId,
+                content: {
+                  action: "epic_completed",
+                  epic_title: parent.title,
+                  total: siblings.length,
+                  failed: failedCount,
+                },
+              });
+            }
+          }
+        }
+      } catch (epicError) {
+        log.warn({ taskId: params.task_id, error: epicError }, "Epic rollup check failed");
+      }
+    }
+
+    // Trigger dispatcher for newly unblocked tasks
+    try {
+      const { runDispatchCycle } = await import("../../tasks/task-dispatcher.js");
+      await runDispatchCycle(new Map(), (p) => 3);
+    } catch {}
 
     // Check if this is a one-shot (non-persistent) agent — auto-terminate after task completion
     let autoTerminated = false;

@@ -7,8 +7,6 @@ import { eq, desc } from "drizzle-orm";
 import { loadConfig } from "../../config/index.js";
 import { cloneSoul } from "../../core/soul.js";
 import { onReviewRequested } from "../../tools/built-in/request-review.js";
-import { onUserMessage } from "../../tools/built-in/message-user.js";
-import { getInboxItems, getPendingCount, respondToInboxItem } from "../../inbox/user-inbox.js";
 
 loadConfig();
 
@@ -185,12 +183,65 @@ export async function reviewsCmd() {
 
 export async function approveTaskCmd(args: string[]) {
   const db = getDb();
+  const { and: andOp } = await import("drizzle-orm");
 
   // Find all review-pending tasks
   const allReviewPending = await db
     .select()
     .from(tasks)
     .where(eq(tasks.status, "review_pending" as any));
+
+  // Also find plan epics with planned children (approvable plans)
+  const allPlannedEpics = await db
+    .select()
+    .from(tasks)
+    .where(andOp(eq(tasks.type, "epic" as any), eq(tasks.status, "review_pending" as any)));
+
+  // Check for epics that have planned children even if not in review_pending
+  let planEpicIds = new Set<string>();
+  if (args.length > 0 && args[0]) {
+    // If user specified an ID, check if it's a plan epic
+    const prefix = args[0];
+    const allTasks = await db.select().from(tasks);
+    const matchingTask = allTasks.find((t) => t.id.startsWith(prefix));
+    if (matchingTask) {
+      const plannedChildren = await db
+        .select()
+        .from(tasks)
+        .where(andOp(eq(tasks.parentTaskId, matchingTask.id), eq(tasks.status, "planned" as any)));
+
+      if (plannedChildren.length > 0) {
+        // This is a plan approval
+        await db
+          .update(tasks)
+          .set({ status: "pending", updatedAt: new Date() })
+          .where(andOp(eq(tasks.parentTaskId, matchingTask.id), eq(tasks.status, "planned" as any)));
+        await db
+          .update(tasks)
+          .set({ status: "in_progress", updatedAt: new Date() })
+          .where(eq(tasks.id, matchingTask.id));
+
+        if (matchingTask.assignedTo) {
+          await db.insert(messages).values({
+            type: "task_verification",
+            toAgentId: matchingTask.assignedTo,
+            taskId: matchingTask.id,
+            content: { action: "plan_approved", tasks_activated: plannedChildren.length },
+          });
+        }
+
+        // Trigger dispatcher
+        try {
+          const { runDispatchCycle } = await import("../../tasks/task-dispatcher.js");
+          await runDispatchCycle(new Map(), (p) => 3);
+        } catch {}
+
+        console.log(`\n  Plan approved: ${matchingTask.title} (${matchingTask.id.substring(0, 8)})`);
+        console.log(`  ${plannedChildren.length} tasks activated.\n`);
+        return;
+      }
+    }
+  }
 
   if (allReviewPending.length === 0) {
     console.log("No tasks pending review.");
@@ -237,10 +288,6 @@ export async function approveTaskCmd(args: string[]) {
       content: { action: "approved", message: "User approved your work. Task is complete." },
     });
   }
-
-  // Sync inbox items for this task
-  const { dismissStaleItemsForTask } = await import("../../inbox/user-inbox.js");
-  await dismissStaleItemsForTask(task.id);
 
   console.log(`\n  Approved: ${task.title} (${task.id.substring(0, 8)})\n`);
 }
@@ -315,97 +362,26 @@ export async function rejectTaskCmd(args: string[]) {
     });
   }
 
-  // Sync inbox items for this task
-  const { dismissStaleItemsForTask: dismissForReject } = await import("../../inbox/user-inbox.js");
-  await dismissForReject(task.id);
-
   console.log(`\n  Rejected: ${task.title} (${task.id.substring(0, 8)})`);
   console.log(`  Feedback: ${feedback}\n`);
-}
-
-// ── Inbox Commands ────────────────────────────────────────────────
-
-export async function inboxCmd() {
-  const items = await getInboxItems({ status: "pending" });
-  if (items.length === 0) {
-    console.log("  No pending inbox items.");
-    return;
-  }
-  console.log(`\n  Pending inbox items:\n`);
-  for (const item of items) {
-    const prefix = item.id.substring(0, 8);
-    const typeTag = `[${item.type}]`.padEnd(12);
-    console.log(`  ${prefix}  ${typeTag} ${item.agentName.padEnd(22)} ${item.title}`);
-  }
-  console.log(`\n  Use /respond <id> <action> [message] to respond.`);
-  console.log(`  Actions: approve, reject, dismiss, reply\n`);
-}
-
-export async function respondInboxCmd(args: string[]) {
-  if (args.length < 2) {
-    console.log("  Usage: /respond <id-prefix> <action> [message]");
-    console.log("  Actions: approve, reject, dismiss, reply");
-    return;
-  }
-
-  const prefix = args[0]!;
-  const action = args[1]! as "approve" | "reject" | "dismiss" | "reply";
-  const message = args.slice(2).join(" ") || undefined;
-
-  if (!["approve", "reject", "dismiss", "reply"].includes(action)) {
-    console.log(`  Invalid action "${action}". Must be: approve, reject, dismiss, reply`);
-    return;
-  }
-
-  // Find the item by prefix
-  const items = await getInboxItems({ status: "pending" });
-  const item = items.find((i) => i.id.startsWith(prefix));
-
-  if (!item) {
-    console.log(`  No pending inbox item matching "${prefix}".`);
-    return;
-  }
-
-  const result = await respondToInboxItem(item.id, action, message);
-  if ("error" in result) {
-    console.log(`  Error: ${result.error}`);
-  } else {
-    console.log(`\n  ${action}: ${item.title} (${item.id.substring(0, 8)})\n`);
-  }
 }
 
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
 const YELLOW = "\x1b[33m";
-const CYAN = "\x1b[36m";
-const MAGENTA = "\x1b[35m";
 
-/** Register CLI as a review + message notifier */
+/** Register CLI as a review notification listener */
 export function setupReviewNotifications() {
   onReviewRequested((review) => {
     console.log(`\n  ${YELLOW}Review requested:${RESET} ${review.title}`);
     console.log(`  ${DIM}${review.summary}${RESET}`);
-    console.log(`  ${DIM}Type "approve" or "reject <feedback>" or "/respond <id> approve"${RESET}\n`);
-  });
-
-  const typeColors: Record<string, string> = {
-    proposal: MAGENTA,
-    update: CYAN,
-    question: YELLOW,
-    alert: YELLOW,
-  };
-
-  onUserMessage((msg) => {
-    const color = typeColors[msg.type] ?? DIM;
-    console.log(`\n  ${color}${msg.agentName}${RESET} ${DIM}(${msg.type})${RESET}: ${msg.message}\n`);
+    console.log(`  ${DIM}Type "approve" or "reject <feedback>"${RESET}\n`);
   });
 }
 
 export function printHelp() {
   console.log(`
   Lulzasaur CLI Commands:
-    /inbox               Show pending inbox items (reviews, proposals, questions, alerts)
-    /respond <id> <act>  Respond to inbox item (approve, reject, dismiss, reply)
     /agents              List all agents
     /souls               List all soul definitions
     /clone <s> <n>       Clone soul <s> as <n> (duplicate & remix)

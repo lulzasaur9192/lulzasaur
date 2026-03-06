@@ -9,9 +9,30 @@ const log = createChildLogger("scheduler");
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 
-// Track concurrent heartbeats to prevent overload
-let activeHeartbeats = 0;
-const MAX_CONCURRENT_HEARTBEATS = 2;
+// Per-provider concurrency tracking
+const activePerProvider = new Map<string, number>();
+const MAX_CONCURRENT_PER_PROVIDER: Record<string, number> = {
+  anthropic: 4,
+  huggingface: 4,
+};
+const DEFAULT_MAX_CONCURRENT = 3;
+
+function getProviderLimit(provider: string): number {
+  return MAX_CONCURRENT_PER_PROVIDER[provider] ?? DEFAULT_MAX_CONCURRENT;
+}
+
+function getActiveCount(provider: string): number {
+  return activePerProvider.get(provider) ?? 0;
+}
+
+function incrementActive(provider: string): void {
+  activePerProvider.set(provider, getActiveCount(provider) + 1);
+}
+
+function decrementActive(provider: string): void {
+  const current = getActiveCount(provider);
+  activePerProvider.set(provider, Math.max(0, current - 1));
+}
 
 /**
  * On first boot, stagger all overdue agents so they don't all fire at once.
@@ -102,22 +123,55 @@ async function pollHeartbeats(): Promise<void> {
 
   if (dueAgents.length === 0) return;
 
-  log.info({ count: dueAgents.length, active: activeHeartbeats }, "Heartbeats due");
+  log.info(
+    { count: dueAgents.length, activePerProvider: Object.fromEntries(activePerProvider) },
+    "Heartbeats due",
+  );
+
+  // Launch heartbeats concurrently (up to per-provider limits)
+  const launched: Promise<void>[] = [];
 
   for (const agent of dueAgents) {
-    // Respect concurrency limit to avoid rate-limiting
-    if (activeHeartbeats >= MAX_CONCURRENT_HEARTBEATS) {
-      log.debug({ agentName: agent.name }, "Deferring heartbeat — concurrency limit reached");
-      break;
+    const provider = agent.provider ?? "unknown";
+    const limit = getProviderLimit(provider);
+    const active = getActiveCount(provider);
+
+    if (active >= limit) {
+      log.debug(
+        { agentName: agent.name, provider, active, limit },
+        "Deferring heartbeat — provider concurrency limit reached",
+      );
+      continue; // skip this agent but keep checking others on different providers
     }
 
-    activeHeartbeats++;
-    try {
-      await runHeartbeat(agent);
-    } catch (error) {
-      log.error({ agentId: agent.id, error: String(error) }, "Heartbeat failed");
-    } finally {
-      activeHeartbeats--;
+    incrementActive(provider);
+
+    const heartbeatPromise = (async () => {
+      try {
+        await runHeartbeat(agent);
+      } catch (error) {
+        log.error({ agentId: agent.id, error: String(error) }, "Heartbeat failed");
+      } finally {
+        decrementActive(provider);
+      }
+    })();
+
+    launched.push(heartbeatPromise);
+  }
+
+  // Wait for all launched heartbeats to complete
+  if (launched.length > 0) {
+    await Promise.all(launched);
+  }
+
+  // Run task dispatcher to assign ready tasks to agents
+  try {
+    const { runDispatchCycle } = await import("../tasks/task-dispatcher.js");
+    const result = await runDispatchCycle(new Map(activePerProvider), getProviderLimit);
+    if (result.dispatched > 0) {
+      log.info(result, "Dispatch cycle completed");
     }
+  } catch (error) {
+    log.error({ error: String(error) }, "Dispatch cycle error");
   }
 }

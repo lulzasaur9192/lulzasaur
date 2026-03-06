@@ -60,7 +60,7 @@ export async function assignTask(taskId: string, agentId: string) {
 
 export async function updateTaskStatus(
   taskId: string,
-  status: "pending" | "assigned" | "in_progress" | "completed" | "failed" | "cancelled",
+  status: "planned" | "pending" | "assigned" | "in_progress" | "completed" | "failed" | "cancelled",
   result?: Record<string, unknown>,
 ) {
   const db = getDb();

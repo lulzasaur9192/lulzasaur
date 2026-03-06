@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { eq, desc, and } from "drizzle-orm";
 import { getDb } from "../../../db/client.js";
 import { tasks, messages } from "../../../db/schema.js";
-import { dismissStaleItemsForTask } from "../../../inbox/user-inbox.js";
 
 export const taskRoutes = new Hono();
 
@@ -69,11 +68,49 @@ taskRoutes.patch("/:id", async (c) => {
   return c.json(updated);
 });
 
-// Approve a task (user review)
+// Approve a task (user review) or approve a plan (epic with planned children)
 taskRoutes.post("/:id/approve", async (c) => {
   const db = getDb();
   const [task] = await db.select().from(tasks).where(eq(tasks.id, c.req.param("id"))).limit(1);
   if (!task) return c.json({ error: "Not found" }, 404);
+
+  // Check if this is a plan epic with planned children
+  const plannedChildren = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.parentTaskId, task.id), eq(tasks.status, "planned" as any)));
+
+  if (plannedChildren.length > 0) {
+    // Plan approval: activate children, set epic to in_progress
+    await db
+      .update(tasks)
+      .set({ status: "pending", updatedAt: new Date() })
+      .where(and(eq(tasks.parentTaskId, task.id), eq(tasks.status, "planned" as any)));
+    await db
+      .update(tasks)
+      .set({ status: "in_progress", updatedAt: new Date() })
+      .where(eq(tasks.id, task.id));
+
+    // Notify planner/orchestrator
+    if (task.assignedTo) {
+      await db.insert(messages).values({
+        type: "task_verification",
+        toAgentId: task.assignedTo,
+        taskId: task.id,
+        content: { action: "plan_approved", tasks_activated: plannedChildren.length },
+      });
+    }
+
+    // Trigger dispatcher
+    try {
+      const { runDispatchCycle } = await import("../../../tasks/task-dispatcher.js");
+      await runDispatchCycle(new Map(), (p) => 3);
+    } catch {}
+
+    return c.json({ status: "plan_approved", tasks_activated: plannedChildren.length });
+  }
+
+  // Standard review approval
   if (task.status !== "review_pending") return c.json({ error: "Task not pending review" }, 400);
 
   await db.update(tasks).set({
@@ -92,9 +129,6 @@ taskRoutes.post("/:id/approve", async (c) => {
       content: { action: "approved", message: "User approved your work." },
     });
   }
-
-  // Sync inbox: dismiss any pending inbox items for this task
-  await dismissStaleItemsForTask(task.id);
 
   return c.json({ status: "approved", task_id: task.id });
 });
@@ -122,9 +156,6 @@ taskRoutes.post("/:id/reject", async (c) => {
       content: { action: "rejected", feedback: feedback ?? "Rejected — needs changes." },
     });
   }
-
-  // Sync inbox: dismiss any pending inbox items for this task
-  await dismissStaleItemsForTask(task.id);
 
   return c.json({ status: "rejected", task_id: task.id, feedback });
 });

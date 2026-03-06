@@ -22,7 +22,6 @@ goals:
 capabilities:
   - shell_exec
   - file_ops
-  - claude_code
   - create_task
   - query_tasks
   - bulletin_board

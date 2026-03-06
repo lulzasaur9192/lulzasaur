@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { desc, gt, gte, eq, and, isNotNull, ne, sql, or } from "drizzle-orm";
+import { desc, gte, eq, and, isNotNull, ne, sql, or } from "drizzle-orm";
 import { getDb } from "../../../db/client.js";
-import { heartbeatLog, agents, tasks, userInbox, tokenUsageLog } from "../../../db/schema.js";
-import { getPendingCount } from "../../../inbox/user-inbox.js";
+import { heartbeatLog, agents, tasks, tokenUsageLog } from "../../../db/schema.js";
 import { claudeCodeStream, type ClaudeCodeStreamEvent } from "../../../integrations/claude-code-stream.js";
 import { getActiveScheduleInterval } from "../../../agent/schedule-matcher.js";
 
@@ -252,34 +251,6 @@ activityRoutes.get("/stream", async (c) => {
         }
       }
 
-      // Inbox count
-      const pendingCount = await getPendingCount();
-      await stream.writeSSE({
-        event: "inbox_count",
-        data: JSON.stringify({ pending: pendingCount }),
-      });
-
-      // New inbox items since last check
-      const newInboxItems = await db
-        .select()
-        .from(userInbox)
-        .where(gt(userInbox.createdAt, lastCheck))
-        .orderBy(desc(userInbox.createdAt))
-        .limit(10);
-
-      for (const item of newInboxItems) {
-        await stream.writeSSE({
-          event: "inbox_item",
-          data: JSON.stringify({
-            id: item.id,
-            type: item.type,
-            agentName: item.agentName,
-            title: item.title,
-            body: item.body.substring(0, 200),
-          }),
-        });
-      }
-
       // System health summary
       const allAgents = await db
         .select()
@@ -290,6 +261,7 @@ activityRoutes.get("/stream", async (c) => {
         .from(tasks)
         .where(
           or(
+            eq(tasks.status, "planned" as any),
             eq(tasks.status, "pending" as any),
             eq(tasks.status, "assigned" as any),
             eq(tasks.status, "in_progress" as any),

@@ -39,6 +39,7 @@ registerTool({
     // ── Active tasks ──
     const taskConditions = [
       or(
+        eq(tasks.status, "planned" as any),
         eq(tasks.status, "pending" as any),
         eq(tasks.status, "assigned" as any),
         eq(tasks.status, "in_progress" as any),

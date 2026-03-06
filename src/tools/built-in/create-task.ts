@@ -16,6 +16,9 @@ interface CreateTaskInput {
   type?: "task" | "epic";
   project_id?: string;
   input?: Record<string, unknown>;
+  status?: "planned" | "pending";
+  depends_on?: string[];
+  suggested_soul?: string;
 }
 
 registerTool({
@@ -33,6 +36,9 @@ registerTool({
       type: { type: "string", enum: ["task", "epic"], description: "Type: 'task' (default) or 'epic' (container for related tasks)" },
       project_id: { type: "string", description: "Project ID to scope this task to (auto-detected from agent if not specified)" },
       input: { type: "object", description: "Structured input data for the task" },
+      status: { type: "string", enum: ["planned", "pending"], description: "Initial status. 'planned' = awaiting approval." },
+      depends_on: { type: "array", items: { type: "string" }, description: "Task IDs this task depends on" },
+      suggested_soul: { type: "string", description: "Recommended soul type (e.g. 'coder', 'researcher', 'worker-generic')" },
     },
     required: ["title", "description"],
   },
@@ -71,7 +77,9 @@ registerTool({
         projectId,
         priority: params.priority ?? 0,
         input: params.input ?? null,
-        status: assignedTo ? "assigned" : "pending",
+        status: params.status ?? (assignedTo ? "assigned" : "pending"),
+        dependsOn: params.depends_on ?? [],
+        suggestedSoul: params.suggested_soul ?? null,
       })
       .returning();
 
@@ -84,6 +92,8 @@ registerTool({
       status: task!.status,
       assigned_to: task!.assignedTo,
       project_id: task!.projectId,
+      depends_on: task!.dependsOn,
+      suggested_soul: task!.suggestedSoul,
       ...(assignWarning ? { warning: assignWarning } : {}),
     };
   },

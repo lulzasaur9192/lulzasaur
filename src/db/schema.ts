@@ -21,6 +21,7 @@ export const agentStatusEnum = pgEnum("agent_status", [
 ]);
 
 export const taskStatusEnum = pgEnum("task_status", [
+  "planned",
   "pending",
   "assigned",
   "in_progress",
@@ -147,6 +148,8 @@ export const tasks = pgTable(
     checkpoint: text("checkpoint"),
     estimatedCompletionAt: timestamp("estimated_completion_at", { withTimezone: true }),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+    dependsOn: jsonb("depends_on").$type<string[]>().default([]),
+    suggestedSoul: text("suggested_soul"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -157,6 +160,7 @@ export const tasks = pgTable(
     index("idx_tasks_created_by").on(table.createdBy),
     index("idx_tasks_project").on(table.projectId),
     index("idx_tasks_parent").on(table.parentTaskId),
+    index("idx_tasks_suggested_soul").on(table.suggestedSoul),
   ],
 );
 
@@ -290,48 +294,6 @@ export const bulletinBoard = pgTable(
   ],
 );
 
-// ── Inbox ─────────────────────────────────────────────────────────
-
-export const inboxItemTypeEnum = pgEnum("inbox_item_type", [
-  "review",
-  "proposal",
-  "question",
-  "alert",
-  "update",
-]);
-
-export const inboxItemStatusEnum = pgEnum("inbox_item_status", [
-  "pending",
-  "approved",
-  "rejected",
-  "dismissed",
-  "replied",
-]);
-
-export const userInbox = pgTable(
-  "user_inbox",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    type: inboxItemTypeEnum("type").notNull(),
-    agentId: uuid("agent_id")
-      .references(() => agents.id)
-      .notNull(),
-    agentName: text("agent_name").notNull(),
-    title: text("title").notNull(),
-    body: text("body").notNull(),
-    metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
-    taskId: uuid("task_id").references(() => tasks.id),
-    status: inboxItemStatusEnum("status").notNull().default("pending"),
-    userResponse: text("user_response"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    respondedAt: timestamp("responded_at", { withTimezone: true }),
-  },
-  (table) => [
-    index("idx_user_inbox_status").on(table.status),
-    index("idx_user_inbox_task").on(table.taskId),
-  ],
-);
-
 // ── Token Usage Log ──────────────────────────────────────────────
 
 export const tokenUsageLog = pgTable(
@@ -445,6 +407,33 @@ export const goalEvaluations = pgTable(
   },
   (table) => [
     index("idx_goal_evals_agent").on(table.agentId),
+  ],
+);
+
+// ── System Trash ──────────────────────────────────────────────────
+
+export const trashItemTypeEnum = pgEnum("trash_item_type", [
+  "message",
+  "bulletin_post",
+  "task",
+]);
+
+export const systemTrash = pgTable(
+  "system_trash",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemType: trashItemTypeEnum("item_type").notNull(),
+    itemId: uuid("item_id").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+    preview: text("preview").notNull(),
+    reason: text("reason"),
+    trashedBy: uuid("trashed_by").references(() => agents.id),
+    trashedByName: text("trashed_by_name"),
+    trashedAt: timestamp("trashed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_system_trash_type").on(table.itemType),
+    index("idx_system_trash_date").on(table.trashedAt),
   ],
 );
 
