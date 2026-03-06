@@ -340,36 +340,196 @@ Each heartbeat updates `last_heartbeat_at` on the agent and clears `current_chec
 
 ### Prerequisites
 
-- Node.js 20+
-- Claude Code CLI (`claude`) installed (for coder agent)
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Node.js** | 20+ (22 recommended) | [Download](https://nodejs.org/) or use `nvm install 22` |
+| **npm** | 10+ | Comes with Node.js |
+| **Git** | Any recent | [Download](https://git-scm.com/) |
 
-### Setup
+PostgreSQL is **not** required — Lulzasaur uses [embedded-postgres](https://github.com/nicedoc/embedded-postgres) which downloads and runs a local Postgres instance automatically.
+
+### Step 1: Clone and Install
 
 ```bash
 git clone https://github.com/lulzasaur9192/lulzasaur.git
 cd lulzasaur
 npm install
-
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your API keys
 ```
 
-### Run
+### Step 2: Get API Keys
+
+You need at least **one** LLM provider. Anthropic is the primary provider and recommended.
+
+#### Anthropic (Required)
+
+The orchestrator and several agents use Anthropic's Claude models.
+
+1. Go to [console.anthropic.com](https://console.anthropic.com/)
+2. Sign up or log in
+3. Navigate to **Settings → API Keys**
+4. Click **Create Key** and copy it (starts with `sk-ant-`)
+5. Anthropic offers $5 free credit for new accounts. After that, add a payment method under **Billing**
+
+#### HuggingFace (Recommended)
+
+Several agents (researcher, writer, trading-agent) use open-source models via the HuggingFace Inference API.
+
+1. Go to [huggingface.co](https://huggingface.co/)
+2. Sign up or log in
+3. Navigate to **Settings → Access Tokens** ([direct link](https://huggingface.co/settings/tokens))
+4. Click **Create new token** with at least `read` permission
+5. Copy the token (starts with `hf_`)
+6. The free tier includes rate-limited access to Inference API models. For heavier usage, subscribe to [HuggingFace Pro](https://huggingface.co/pricing) ($9/month) for higher rate limits
+
+#### OpenAI (Optional)
+
+Only needed if you want to use GPT models for specific agents.
+
+1. Go to [platform.openai.com](https://platform.openai.com/)
+2. Sign up or log in
+3. Navigate to **API Keys** in the sidebar
+4. Click **Create new secret key** and copy it (starts with `sk-`)
+5. Add a payment method under **Billing** — OpenAI requires prepaid credits
+
+#### Claude Code CLI (Optional)
+
+Required for the **coder** agent to delegate coding tasks to Claude Code.
+
+1. Install: `npm install -g @anthropic-ai/claude-code`
+2. Run `claude` once to authenticate with your Anthropic account
+3. Verify: `claude --version`
+
+If Claude Code is not on your PATH, set `CLAUDE_BIN` in `.env` to the full path (e.g. `which claude`).
+
+### Step 3: Configure Environment
 
 ```bash
-npm run start    # Boots everything: gateway, scheduler, web UI, heartbeats
+cp .env.example .env
 ```
 
-### Interfaces
+Edit `.env` with your API keys:
 
-| Interface | Access |
-|-----------|--------|
-| CLI REPL | `lulzasaur chat` |
-| Web Dashboard | `http://localhost:3000` |
-| Slack | Configured via .env |
+```bash
+# Required — paste your Anthropic key
+ANTHROPIC_API_KEY=sk-ant-your-key-here
 
-### CLI Commands
+# Recommended — paste your HuggingFace token
+HF_TOKEN=hf_your-token-here
+
+# Optional — only if using OpenAI models
+# OPENAI_API_KEY=sk-your-key-here
+```
+
+All other settings have sensible defaults. See `.env.example` for the full list.
+
+### Step 4: Start the Database
+
+```bash
+npm run db:start
+```
+
+This downloads and starts an embedded PostgreSQL instance in `tmp-pg/`. It runs on port 5432. Leave this terminal open.
+
+> **Note:** On first run, this downloads ~70MB of PostgreSQL binaries. Subsequent starts are instant.
+
+### Step 5: Initialize the Schema
+
+In a new terminal:
+
+```bash
+npm run db:push
+```
+
+This creates all tables (agents, tasks, conversations, memory, etc.) in the local database.
+
+### Step 6: Run Lulzasaur
+
+```bash
+npm start
+```
+
+You should see:
+
+```
+  Lulzasaur v0.1.0
+  Agents: X active
+  Models: ...
+  Web:    http://localhost:3000
+  Type /help for commands
+```
+
+The system is now running. The CLI REPL accepts commands, and the web dashboard is at [localhost:3000](http://localhost:3000).
+
+### Step 7 (Optional): Set Up Slack Integration
+
+Slack lets agents communicate with you via Slack channels using Socket Mode (no public URL needed).
+
+#### Create a Slack App
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps)
+2. Click **Create New App → From scratch**
+3. Name it (e.g. "Lulzasaur") and select your workspace
+
+#### Configure Permissions
+
+1. Go to **OAuth & Permissions** in the sidebar
+2. Under **Bot Token Scopes**, add:
+   - `chat:write` — Send messages
+   - `channels:history` — Read channel messages
+   - `channels:read` — List channels
+   - `app_mentions:read` — Respond to @mentions
+   - `groups:history` — Read private channel messages (optional)
+3. Click **Install to Workspace** and authorize
+4. Copy the **Bot User OAuth Token** (starts with `xoxb-`)
+
+#### Enable Socket Mode
+
+1. Go to **Socket Mode** in the sidebar
+2. Toggle **Enable Socket Mode** on
+3. Create an app-level token with `connections:write` scope
+4. Copy the **App-Level Token** (starts with `xapp-`)
+
+#### Enable Events
+
+1. Go to **Event Subscriptions** in the sidebar
+2. Toggle **Enable Events** on
+3. Under **Subscribe to bot events**, add:
+   - `message.channels`
+   - `app_mention`
+
+#### Get the Signing Secret
+
+1. Go to **Basic Information** in the sidebar
+2. Copy the **Signing Secret**
+
+#### Add to .env
+
+```bash
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+SLACK_SIGNING_SECRET=your-signing-secret
+SLACK_APP_TOKEN=xapp-your-app-level-token
+# SLACK_ALLOWED_CHANNELS=C01234ABCDE    # Optional: restrict to specific channels
+```
+
+Restart Lulzasaur and it will connect to Slack automatically.
+
+---
+
+### Quick Reference
+
+#### Development Commands
+
+| Command | What It Does |
+|---------|-------------|
+| `npm start` | Start Lulzasaur (production) |
+| `npm run dev` | Start with hot-reload (development) |
+| `npm run db:start` | Start embedded PostgreSQL |
+| `npm run db:push` | Apply schema changes to database |
+| `npm run db:studio` | Open Drizzle Studio (visual DB browser) |
+| `npm run lint` | Type-check with TypeScript |
+| `npm test` | Run test suite |
+
+#### CLI Commands (inside the REPL)
 
 | Command | What It Does |
 |---------|-------------|
@@ -382,6 +542,15 @@ npm run start    # Boots everything: gateway, scheduler, web UI, heartbeats
 | `/approve <task-id>` | Approve a task (with optional notes) |
 | `/reject <task-id>` | Reject a task with feedback |
 | `/heartbeats` | View heartbeat log |
+| `/help` | Show all available commands |
+
+#### Interfaces
+
+| Interface | Access |
+|-----------|--------|
+| CLI REPL | Interactive terminal when you run `npm start` |
+| Web Dashboard | [http://localhost:3000](http://localhost:3000) |
+| Slack | Automatic when `SLACK_*` vars are set |
 
 ## Project Structure
 
