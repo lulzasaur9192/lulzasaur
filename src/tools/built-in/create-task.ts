@@ -34,7 +34,7 @@ registerTool({
       priority: { type: "number", description: "Priority (0=normal, higher=more urgent)" },
       parent_task_id: { type: "string", description: "Parent task ID if this is a sub-task" },
       type: { type: "string", enum: ["task", "epic"], description: "Type: 'task' (default) or 'epic' (container for related tasks)" },
-      project_id: { type: "string", description: "Project ID to scope this task to (auto-detected from agent if not specified)" },
+      project_id: { type: "string", description: "Project UUID to scope this task to (auto-detected from agent if not specified). Use create_project first to get a project ID." },
       input: { type: "object", description: "Structured input data for the task" },
       status: { type: "string", enum: ["planned", "pending"], description: "Initial status. 'planned' = awaiting approval." },
       depends_on: { type: "array", items: { type: "string" }, description: "Task IDs this task depends on" },

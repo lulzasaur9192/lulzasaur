@@ -28,6 +28,7 @@ goals:
 capabilities:
   - claude_code
   - shell_exec
+  - create_project
   - create_task
   - query_tasks
   - query_agents

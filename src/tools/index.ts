@@ -28,6 +28,7 @@ import "./built-in/web-fetch.js";
 import "./built-in/graceful-shutdown.js";
 import "./built-in/trash.js";
 import "./built-in/approve-plan.js";
+import "./built-in/create-project.js";
 
 export { registerTool, getTool, listTools } from "./tool-registry.js";
 export { executeToolCall, getToolsForAgent } from "./tool-executor.js";
