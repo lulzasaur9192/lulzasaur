@@ -335,6 +335,13 @@ Agents interact with the world through tools. Each tool requires a capability, a
 | `update_task_progress` | `update_task_progress` (core) | Report progress %, checkpoint, ETA on active tasks |
 | `get_system_health` | `system_health` | Full system snapshot: agents, tasks, progress, blockers |
 
+### Web Tools
+
+| Tool | Capability | What It Does |
+|------|-----------|-------------|
+| `web_search` | `web_search` | Search the web via Tavily (general, news, finance topics) |
+| `web_fetch` | `web_search` | Extract clean content from URLs (strips ads/boilerplate) |
+
 ### Communication Tools
 
 | Tool | Capability | What It Does |
@@ -459,6 +466,15 @@ Only needed if you want to use GPT models for specific agents.
 4. Click **Create new secret key** and copy it (starts with `sk-`)
 5. Add a payment method under **Billing** — OpenAI requires prepaid credits
 
+#### Tavily (Recommended)
+
+Gives agents the ability to search the web and extract content from URLs. Used by the researcher, writer, and orchestrator agents.
+
+1. Go to [tavily.com](https://tavily.com/)
+2. Sign up or log in
+3. Copy your API key from the dashboard (starts with `tvly-`)
+4. The free tier includes 1,000 searches/month — more than enough for typical usage
+
 #### Claude Code CLI (Optional)
 
 Required for the **coder** agent to delegate coding tasks to Claude Code.
@@ -483,6 +499,9 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Recommended — paste your HuggingFace token
 HF_TOKEN=hf_your-token-here
+
+# Recommended — paste your Tavily key (web search)
+TAVILY_API_KEY=tvly-your-key-here
 
 # Optional — only if using OpenAI models
 # OPENAI_API_KEY=sk-your-key-here
