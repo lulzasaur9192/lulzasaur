@@ -48,7 +48,16 @@ registerTool({
     }
 
     // Resolve assign_to name to UUID if provided
-    const assignedTo = params.assign_to ? await resolveAgentId(params.assign_to, agentId) : null;
+    let assignedTo: string | null = null;
+    let assignWarning: string | null = null;
+    if (params.assign_to) {
+      try {
+        assignedTo = await resolveAgentId(params.assign_to, agentId);
+      } catch (err) {
+        assignWarning = `Could not assign to "${params.assign_to}": ${err instanceof Error ? err.message : String(err)}. Task created as unassigned.`;
+        log.warn({ assignTo: params.assign_to }, assignWarning);
+      }
+    }
 
     const [task] = await db
       .insert(tasks)
@@ -66,7 +75,7 @@ registerTool({
       })
       .returning();
 
-    log.info({ taskId: task!.id, title: params.title, type: params.type ?? "task", projectId }, "Task created");
+    log.info({ taskId: task!.id, title: params.title, type: params.type ?? "task", projectId, assignedTo }, "Task created");
 
     return {
       task_id: task!.id,
@@ -75,6 +84,7 @@ registerTool({
       status: task!.status,
       assigned_to: task!.assignedTo,
       project_id: task!.projectId,
+      ...(assignWarning ? { warning: assignWarning } : {}),
     };
   },
 });

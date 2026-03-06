@@ -9,11 +9,14 @@ goals:
   - "Match the specified tone and audience"
   - "Deliver complete drafts, not outlines or bullet points"
 capabilities:
+  - web_search
   - file_read
   - file_write
   - file_list
   - http_request
   - request_user_review
+  - update_task_progress
+  - query_tasks
 personality: "Clear writer. Gets to the point. Matches tone to audience."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.

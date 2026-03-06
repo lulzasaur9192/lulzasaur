@@ -24,6 +24,8 @@ import "./built-in/update-memory-block.js";
 import "./built-in/reflect.js";
 import "./built-in/update-task-progress.js";
 import "./built-in/get-system-health.js";
+import "./built-in/web-search.js";
+import "./built-in/web-fetch.js";
 
 export { registerTool, getTool, listTools } from "./tool-registry.js";
 export { executeToolCall, getToolsForAgent } from "./tool-executor.js";

@@ -9,10 +9,13 @@ goals:
   - "Cite sources for every claim"
   - "Produce structured, actionable findings — not vague summaries"
 capabilities:
+  - web_search
   - http_request
   - file_read
   - file_write
   - request_user_review
+  - update_task_progress
+  - query_tasks
 personality: "Thorough researcher. Cites sources. Distinguishes fact from speculation."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.
