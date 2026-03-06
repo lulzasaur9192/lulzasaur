@@ -80,7 +80,17 @@ export async function boot() {
   // 2. Terminate stale temporary agents (non-persistent, still alive)
   await terminateTemporaryAgents();
 
-  // 2.5. Sync agent settings (model, intervals, schedules) from soul definitions
+  // 2.5. Reset stale "active" agents to "idle" — no agent can be running at boot
+  const staleActive = await db
+    .update(agents)
+    .set({ status: "idle", updatedAt: new Date(), currentCheckpoint: null })
+    .where(eq(agents.status, "active" as any))
+    .returning({ id: agents.id, name: agents.name });
+  if (staleActive.length > 0) {
+    log.info({ agents: staleActive.map((a) => a.name) }, "Reset stale active agents to idle");
+  }
+
+  // 2.6. Sync agent settings (model, intervals, schedules) from soul definitions
   await syncAgentsFromSouls();
 
   // 3. Ensure all persistent souls have a running agent
