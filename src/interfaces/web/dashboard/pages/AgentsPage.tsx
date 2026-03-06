@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useApp } from "../context/AppContext.js";
 import { useApi } from "../hooks/useApi.js";
 import { usePolling } from "../hooks/usePolling.js";
@@ -29,8 +29,14 @@ export function AgentsPage() {
 
   usePolling(refetch, 5000);
 
-  const agentList: Agent[] = (rawAgents || []).map((a: any) => a.agent || a);
-  if (rawAgents) setAgents(agentList);
+  const agentList: Agent[] = useMemo(
+    () => (rawAgents || []).map((a: any) => a.agent || a),
+    [rawAgents]
+  );
+
+  useEffect(() => {
+    if (rawAgents) setAgents(agentList);
+  }, [rawAgents, agentList, setAgents]);
 
   // Build a map of latest heartbeat per agent
   const latestHeartbeat: Record<string, Heartbeat> = {};
