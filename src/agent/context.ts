@@ -329,8 +329,11 @@ function extractJsonArray(text: string): unknown[] | null {
     if (Array.isArray(result)) return result;
   } catch { /* continue */ }
 
-  // Strategy 2: Strip markdown code fences
-  const fenceStripped = trimmed.replace(/^```(?:json)?\s*/m, "").replace(/\s*```\s*$/m, "").trim();
+  // Strategy 2: Strip markdown code fences (handles ```json, ```, and nested fences)
+  const fenceStripped = trimmed
+    .replace(/^```(?:json|JSON)?\s*\n?/gm, "")
+    .replace(/\n?\s*```\s*$/gm, "")
+    .trim();
   try {
     const result = JSON.parse(fenceStripped);
     if (Array.isArray(result)) return result;
@@ -344,6 +347,19 @@ function extractJsonArray(text: string): unknown[] | null {
       const result = JSON.parse(text.substring(firstBracket, lastBracket + 1));
       if (Array.isArray(result)) return result;
     } catch { /* continue */ }
+  }
+
+  // Strategy 4: Truncated JSON (model hit maxTokens mid-array).
+  // Find the last complete object `}` before truncation and close the array.
+  if (firstBracket !== -1) {
+    const arrayContent = text.substring(firstBracket);
+    const lastCloseBrace = arrayContent.lastIndexOf("}");
+    if (lastCloseBrace > 0) {
+      try {
+        const result = JSON.parse(arrayContent.substring(0, lastCloseBrace + 1) + "]");
+        if (Array.isArray(result)) return result;
+      } catch { /* continue */ }
+    }
   }
 
   return null;
@@ -393,8 +409,8 @@ Respond with ONLY the JSON array, no other text.`,
       }],
       {
         model: extractionModel,
-        maxTokens: 1000,
-        systemPrompt: "You extract structured knowledge from conversations. Respond only with valid JSON arrays.",
+        maxTokens: 2000,
+        systemPrompt: "You extract structured knowledge from conversations. Respond only with valid JSON arrays. No markdown fences, no commentary — just the raw JSON array.",
       },
     );
 
