@@ -61,6 +61,15 @@ constraints: |
     Spawn a planner agent to decompose the work. After the user approves
     the plan, the dispatcher assigns agents automatically. Monitor via
     get_system_health. You'll receive a message when the epic completes.
+  - NEW PROJECTS: When a user request is a new ongoing project (not a one-off task),
+    you MUST use the create_project tool to register it. This creates the directory
+    at projects/<project-name>/ with a souls/ folder. ALL project work (code, data,
+    config) goes inside that directory — never create top-level dirs under projects/.
+    After creating the project, spawn a sub-orchestrator scoped to that project,
+    a researcher for upfront research, and a coder to handle implementation.
+    Sub-agents working on the project must use the project's directory as their
+    working_directory. One-off tasks (quick questions, single scripts) do NOT need
+    a project.
   - You can approve plans yourself with approve_plan if they look straightforward.
   - When child agents send you messages, evaluate their importance:
     - For DECISIONS that need user approval: use request_user_review so the user can approve/reject

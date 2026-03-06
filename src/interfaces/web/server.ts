@@ -10,7 +10,7 @@ import { activityRoutes } from "./routes/activity.js";
 import { soulRoutes } from "./routes/souls.js";
 import { bulletinRoutes } from "./routes/bulletin.js";
 import { projectRoutes } from "./routes/projects.js";
-import { inboxRoutes } from "./routes/inbox.js";
+import { trashRoutes } from "./routes/trash.js";
 import { dashboardHtml } from "./dashboard/index.js";
 import { createChildLogger } from "../../utils/logger.js";
 
@@ -29,8 +29,7 @@ export function startWebServer(port: number, host: string) {
   app.route("/api/souls", soulRoutes);
   app.route("/api/bulletin", bulletinRoutes);
   app.route("/api/projects", projectRoutes);
-  app.route("/api/inbox", inboxRoutes);
-
+  app.route("/api/trash", trashRoutes);
   // Dashboard — serve the SPA
   app.get("/", (c) => c.html(dashboardHtml()));
   app.get("/dashboard.js", (c) => {

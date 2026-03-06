@@ -1,8 +1,8 @@
 # Prop-Shop: Automated Trading System
 
-An example module built on top of Lulzasaur that demonstrates how to build a domain-specific project with its own agents, tasks, and workflows. A team of specialized agents runs a daily pipeline — fetching market data, researching entry signals, managing risk, and executing trades.
+An example project built on top of Lulzasaur that demonstrates how to build a domain-specific project with its own agents, tasks, and workflows. A team of specialized agents runs a daily pipeline — fetching market data, researching entry signals, managing risk, and executing trades.
 
-> **This is an example module.** It ships with Lulzasaur to demonstrate the project/module system. You can use it as a reference for building your own modules, or adapt it for your own trading strategies.
+> **This is an example project.** It ships with Lulzasaur to demonstrate the project system. You can use it as a reference for building your own projects, or adapt it for your own trading strategies.
 
 ---
 
@@ -82,7 +82,7 @@ The risk manager enforces these with zero exceptions:
 | **position-monitor** | Tracks open positions, manages exits |
 | **monitor-agent** | System health checks |
 
-Soul definitions: `modules/prop-shop/souls/`
+Soul definitions: `projects/prop-shop/souls/`
 
 ---
 
@@ -125,7 +125,7 @@ Everything else runs autonomously.
 ## Project Files
 
 ```
-modules/prop-shop/
+projects/prop-shop/
 ├── README.md                    # Data pipeline technical reference
 ├── config.yaml                  # Symbols, indicators, strategy params
 ├── run_daily_pipeline.py        # Pipeline orchestrator script
@@ -154,7 +154,7 @@ To complete the integration, you would need:
    TASTYTRADE_PASSWORD=your-password
    TASTYTRADE_ACCOUNT_ID=your-paper-account-id
    ```
-5. **Implement the API client** in `modules/prop-shop/src/trade_executor.py`
+5. **Implement the API client** in `projects/prop-shop/src/trade_executor.py`
 
 The Tastytrade API docs are at [developer.tastytrade.com](https://developer.tastytrade.com/). This is left as an exercise — the data pipeline, signal generation, backtesting, and risk management are all functional without it.
 

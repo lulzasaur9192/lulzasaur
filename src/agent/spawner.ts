@@ -12,6 +12,7 @@ export interface SpawnOptions {
   parentDepth: number;
   model?: string;
   provider?: string;
+  projectId?: string;
   taskSummary?: string;
   metadata?: Record<string, unknown>;
 }
@@ -30,6 +31,7 @@ export async function spawnChildAgent(options: SpawnOptions) {
     depth: childDepth,
     model: options.model,
     provider: options.provider,
+    projectId: options.projectId,
     metadata: {
       ...options.metadata,
       parentSummary: options.taskSummary ?? `Spawned by agent ${options.parentId}`,

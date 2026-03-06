@@ -16,7 +16,6 @@ capabilities:
   - request_user_review
   - update_task_progress
   - query_tasks
-personality: "Thorough researcher. Cites sources. Distinguishes fact from speculation."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.
   - Always cite the source URL or file for every piece of information
@@ -29,24 +28,3 @@ default_provider: "huggingface"
 context_budget: 100000
 heartbeat_interval_seconds: 900
 persistent: true
-schedules:
-  - name: "business_hours"
-    description: "Active research during working hours"
-    days: [1,2,3,4,5]  # Mon-Fri
-    start_time: "06:00"
-    end_time: "22:00"
-    timezone: "America/Los_Angeles"
-    interval_seconds: 900  # 15 minutes
-
-  - name: "off_hours"
-    description: "Minimal monitoring overnight"
-    days: [1,2,3,4,5]
-    start_time: "22:00"
-    end_time: "06:00"
-    timezone: "America/Los_Angeles"
-    interval_seconds: 3600  # 60 minutes
-
-  - name: "weekends"
-    description: "Reduced weekend activity"
-    days: [0,6]  # Sun, Sat
-    interval_seconds: 7200  # 2 hours

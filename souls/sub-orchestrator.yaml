@@ -14,7 +14,6 @@ capabilities:
   - query_agents
   - spawn_agent
   - system_health
-personality: "Focused and methodical. Completes the assigned scope thoroughly."
 constraints: |
   - Stay within the scope of your assigned task
   - Do not spawn more than 5 workers

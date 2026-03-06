@@ -17,24 +17,24 @@ interface ProjectDefinition {
 }
 
 /**
- * Scan modules directory for project.yaml files and upsert to projects table.
+ * Scan projects directory for project.yaml files and upsert to projects table.
  * Pattern mirrors syncSoulsFromDirectory in soul.ts.
  */
-export async function syncProjectsFromDirectory(modulesDir: string): Promise<void> {
+export async function syncProjectsFromDirectory(projectsDir: string): Promise<void> {
   const db = getDb();
   const syncedNames = new Set<string>();
 
   let dirs: string[];
   try {
-    dirs = await readdir(modulesDir, { withFileTypes: true })
+    dirs = await readdir(projectsDir, { withFileTypes: true })
       .then((entries) => entries.filter((e) => e.isDirectory()).map((e) => e.name));
   } catch {
-    log.warn({ modulesDir }, "Modules directory not found, skipping project sync");
+    log.warn({ projectsDir }, "Projects directory not found, skipping project sync");
     return;
   }
 
   for (const dir of dirs) {
-    const projectFile = join(modulesDir, dir, "project.yaml");
+    const projectFile = join(projectsDir, dir, "project.yaml");
     let raw: string;
     try {
       raw = await readFile(projectFile, "utf-8");
@@ -115,13 +115,13 @@ export async function syncProjectsFromDirectory(modulesDir: string): Promise<voi
  * For each project, scan its souls/ directory and upsert to soulDefinitions with projectId set.
  * Soul names stay clean (e.g. "market-analyst"); uniqueness is scoped by (name, projectId).
  */
-export async function syncProjectSouls(modulesDir: string): Promise<void> {
+export async function syncProjectSouls(projectsDir: string): Promise<void> {
   const db = getDb();
 
   const activeProjects = await db.select().from(projects).where(eq(projects.active, true));
 
   for (const project of activeProjects) {
-    const soulsDir = join(modulesDir, project.path, "souls");
+    const soulsDir = join(projectsDir, project.path, "souls");
     let files: string[];
     try {
       files = (await readdir(soulsDir)).filter((f) => f.endsWith(".yaml") || f.endsWith(".yml"));
@@ -159,6 +159,7 @@ export async function syncProjectSouls(modulesDir: string): Promise<void> {
             personality: soul.personality ?? null,
             constraints: soul.constraints ?? null,
             defaultModel: soul.default_model ?? null,
+            defaultProvider: soul.default_provider ?? null,
             contextBudget: soul.context_budget,
             heartbeatIntervalSeconds: soul.heartbeat_interval_seconds ?? null,
             persistent: soul.persistent,
@@ -178,6 +179,7 @@ export async function syncProjectSouls(modulesDir: string): Promise<void> {
           personality: soul.personality ?? null,
           constraints: soul.constraints ?? null,
           defaultModel: soul.default_model ?? null,
+          defaultProvider: soul.default_provider ?? null,
           contextBudget: soul.context_budget,
           heartbeatIntervalSeconds: soul.heartbeat_interval_seconds ?? null,
           persistent: soul.persistent,

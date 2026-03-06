@@ -411,43 +411,6 @@ export function dashboardHtml(): string {
     .schedule-agent-chip .dot.active { background: var(--yellow); }
     .schedule-agent-chip .interval { color: var(--text-muted); }
 
-    /* ── Inbox — Glass Cards ── */
-    .inbox-card {
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--glass-border);
-      border-left: 4px solid var(--border-strong);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      margin-bottom: 12px;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
-      animation: cardEntrance var(--duration-slow) var(--ease-out) both;
-    }
-    .inbox-card:nth-child(1) { animation-delay: 0ms; }
-    .inbox-card:nth-child(2) { animation-delay: 50ms; }
-    .inbox-card:nth-child(3) { animation-delay: 100ms; }
-    .inbox-card:nth-child(4) { animation-delay: 150ms; }
-    .inbox-card:nth-child(n+5) { animation-delay: 200ms; }
-    .inbox-card:hover { box-shadow: var(--shadow-md), 0 0 16px rgba(10,132,255,0.08); transform: translateY(-2px); }
-    .inbox-card.review { border-left-color: var(--yellow); }
-    .inbox-card.proposal { border-left-color: var(--purple); }
-    .inbox-card.question { border-left-color: var(--accent); }
-    .inbox-card.alert { border-left-color: var(--red); }
-    .inbox-card.update { border-left-color: var(--green); }
-    .inbox-card .inbox-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .inbox-card .inbox-title { font-size: 15px; font-weight: 600; }
-    .inbox-card .inbox-body { font-size: 14px; color: var(--text-muted); line-height: 1.55; white-space: pre-wrap; margin-bottom: 14px; }
-    .inbox-card .inbox-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
-    .inbox-card .inbox-actions { display: flex; gap: 10px; }
-    .inbox-card .inbox-actions button { padding: 8px 16px; border-radius: var(--radius-md); border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: transform var(--duration-fast), opacity var(--duration-fast), box-shadow var(--duration-fast); }
-    .inbox-card .inbox-actions button:hover { transform: scale(1.02); }
-    .inbox-card .inbox-actions button:active { transform: scale(0.97); }
-    .inbox-card .inbox-actions .btn-reply-input { flex: 1; padding: 8px 12px; background: rgba(28,28,30,0.8); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text); font-size: 13px; outline: none; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
-    .inbox-card .inbox-actions .btn-reply-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle), 0 0 12px rgba(10,132,255,0.1); }
-    .inbox-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-full); background: var(--red); color: #fff; font-size: 11px; font-weight: 700; margin-left: 6px; box-shadow: 0 0 8px rgba(255,69,58,0.3); }
-
     /* Agent Detail */
     .agent-detail-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); cursor: pointer; font-size: 14px; margin-bottom: 20px; padding: 6px 0; transition: color var(--duration-fast); }
     .agent-detail-back:hover { color: var(--accent); }
@@ -636,10 +599,6 @@ export function dashboardHtml(): string {
     .conversation-meta { font-size: 12px; color: var(--text-muted); }
     .conversation-preview { font-size: 13px; color: var(--text-muted); }
 
-    /* InboxPage */
-    .inbox-agent-name { font-size: 13px; color: var(--text-muted); }
-    .inbox-id { font-size: 12px; color: var(--text-muted); margin-left: auto; }
-
     /* HeartbeatLog / HeartbeatsTab */
     .summary-cell { max-width: 400px; font-size: 13px; }
     .status-ok { color: var(--green); }
@@ -659,6 +618,38 @@ export function dashboardHtml(): string {
 
     /* AgentTable */
     .agent-id-hint { color: var(--text-muted); font-size: 12px; }
+
+    /* ── Trash ── */
+    .trash-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+    .trash-empty-btn { padding: 8px 18px; border-radius: var(--radius-md); border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: transform var(--duration-fast), opacity var(--duration-fast); }
+    .trash-empty-btn:active { transform: scale(0.97); }
+    .trash-confirm { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--red); }
+    .trash-confirm-btn { padding: 6px 14px; border-radius: var(--radius-md); border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .trash-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-sm);
+      border-left: 3px solid var(--text-muted);
+      transition: box-shadow var(--duration-fast), transform var(--duration-fast);
+      animation: cardEntrance var(--duration-slow) var(--ease-out) both;
+    }
+    .trash-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .trash-border-accent { border-left-color: var(--accent); }
+    .trash-border-purple { border-left-color: var(--purple); }
+    .trash-border-green { border-left-color: var(--green); }
+    .trash-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .trash-card-preview { font-size: 14px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .trash-card-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; flex-wrap: wrap; }
+    .trash-card-reason { font-style: italic; }
+    .trash-actions { display: flex; gap: 8px; }
+    .trash-action-btn { padding: 5px 14px; border-radius: var(--radius-md); border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: transform var(--duration-fast), opacity var(--duration-fast); }
+    .trash-action-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .trash-action-btn:active { transform: scale(0.97); }
 
     /* ── Animations ── */
     @keyframes modalSlideUp {

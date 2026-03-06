@@ -49,21 +49,6 @@ export interface Task {
   createdAt: string;
 }
 
-// ── Inbox ──
-export type InboxType = "review" | "proposal" | "question" | "alert" | "update";
-export type InboxStatus = "pending" | "approved" | "rejected" | "dismissed" | "replied";
-
-export interface InboxItem {
-  id: string;
-  type: InboxType;
-  status: InboxStatus;
-  title: string;
-  body: string;
-  agentName: string;
-  userResponse: string | null;
-  createdAt: string;
-}
-
 // ── Bulletin ──
 export interface BulletinPost {
   id: string;
@@ -198,18 +183,27 @@ export interface SSEClaudeCodeEvent {
   timestamp: string;
 }
 
-export interface SSEInboxCount {
-  pending: number;
+// ── Trash ──
+export type TrashItemType = "message" | "bulletin_post" | "task";
+
+export interface TrashItem {
+  id: string;
+  itemType: TrashItemType;
+  itemId: string;
+  preview: string;
+  reason: string | null;
+  trashedByName: string | null;
+  trashedAt: string;
 }
 
 // ── Pages ──
 export type Page =
-  | "inbox"
   | "agents"
   | "tasks"
   | "bulletin"
   | "activity"
   | "tokens"
+  | "trash"
   | "agent-detail"
   | "project-agents"
   | "project-epics"

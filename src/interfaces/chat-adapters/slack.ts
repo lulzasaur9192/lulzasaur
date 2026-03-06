@@ -2,12 +2,10 @@ import { App, type LogLevel } from "@slack/bolt";
 import type { ChatAdapter } from "./adapter-types.js";
 import type { AgentInput } from "../../core/types.js";
 import { createChildLogger } from "../../utils/logger.js";
-import { onUserMessage, offUserMessage } from "../../tools/built-in/message-user.js";
 import { onReviewRequested, offReviewRequested } from "../../tools/built-in/request-review.js";
 import { getDb } from "../../db/client.js";
 import { tasks, messages, agents } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
-import { respondToInboxItem, getInboxItems } from "../../inbox/user-inbox.js";
 import { getProjectIdFromChannel } from "../../integrations/slack-channels.js";
 
 const log = createChildLogger("slack");
@@ -22,7 +20,6 @@ export class SlackAdapter implements ChatAdapter {
   private appToken: string;
   private allowedChannels: string[];
   private botUserId: string | null = null;
-  private userMessageHandler: ((msg: any) => void) | null = null;
   private reviewHandler: ((review: any) => void) | null = null;
   private notifierRegistered = false;
   private isConnected = false;
@@ -199,13 +196,11 @@ export class SlackAdapter implements ChatAdapter {
   }
 
   /**
-   * Handle inbox commands: "approve <id>", "reject <id> <feedback>",
-   * "reply <id> <message>", "dismiss <id>".
-   * Falls back to legacy task-only approve/reject for backward compatibility.
+   * Handle review commands: "approve <id>", "reject <id> <feedback>".
    */
   private async handleReviewCommand(text: string): Promise<string | null> {
     const lower = text.toLowerCase();
-    const actions = ["approve", "reject", "reply", "dismiss"];
+    const actions = ["approve", "reject"];
 
     for (const action of actions) {
       if (!lower.startsWith(action + " ")) continue;
@@ -217,86 +212,56 @@ export class SlackAdapter implements ChatAdapter {
       const prefix = spaceIdx > 0 ? rest.substring(0, spaceIdx) : rest;
       const message = spaceIdx > 0 ? rest.substring(spaceIdx + 1).trim() : undefined;
 
-      // Try inbox items first
       try {
-        const pendingItems = await getInboxItems({ status: "pending" });
-        const item = pendingItems.find((i) => i.id.startsWith(prefix));
+        const db = getDb();
+        const allReviewPending = await db
+          .select()
+          .from(tasks)
+          .where(eq(tasks.status, "review_pending" as any));
+        const task = allReviewPending.find((t) => t.id.startsWith(prefix));
 
-        if (item) {
-          const defaultMessages: Record<string, string> = {
-            reject: "Rejected via Slack — needs changes.",
-          };
-          const result = await respondToInboxItem(
-            item.id,
-            action as any,
-            message ?? defaultMessages[action],
-          );
+        if (!task) return `No review-pending task matching "${prefix}".`;
 
-          if ("error" in result) {
-            return `Error: ${result.error}`;
+        if (action === "approve") {
+          await db.update(tasks).set({
+            status: "completed",
+            verificationStatus: "verified",
+            verificationNotes: "Approved by user via Slack",
+            completedAt: new Date(),
+            updatedAt: new Date(),
+          }).where(eq(tasks.id, task.id));
+
+          if (task.assignedTo) {
+            await db.insert(messages).values({
+              type: "task_verification",
+              toAgentId: task.assignedTo,
+              taskId: task.id,
+              content: { action: "approved", message: "User approved your work via Slack." },
+            });
           }
+          return `Approved: ${task.title}`;
+        } else {
+          const feedback = message ?? "Rejected via Slack — needs changes.";
+          await db.update(tasks).set({
+            status: "in_progress",
+            verificationStatus: "rejected",
+            verificationNotes: feedback,
+            updatedAt: new Date(),
+          }).where(eq(tasks.id, task.id));
 
-          return `${action.charAt(0).toUpperCase() + action.slice(1)}: ${item.title}${message ? `\n${message}` : ""}`;
+          if (task.assignedTo) {
+            await db.insert(messages).values({
+              type: "task_verification",
+              toAgentId: task.assignedTo,
+              taskId: task.id,
+              content: { action: "rejected", feedback },
+            });
+          }
+          return `Rejected: ${task.title}\nFeedback: ${feedback}`;
         }
       } catch (e) {
-        log.warn({ error: String(e) }, "Failed to handle inbox command");
+        return `Error: ${e instanceof Error ? e.message : String(e)}`;
       }
-
-      // Fall back to legacy task approve/reject
-      if (action === "approve" || action === "reject") {
-        try {
-          const db = getDb();
-          const allReviewPending = await db
-            .select()
-            .from(tasks)
-            .where(eq(tasks.status, "review_pending" as any));
-          const task = allReviewPending.find((t) => t.id.startsWith(prefix));
-
-          if (!task) return `No pending item or review-pending task matching "${prefix}".`;
-
-          if (action === "approve") {
-            await db.update(tasks).set({
-              status: "completed",
-              verificationStatus: "verified",
-              verificationNotes: "Approved by user via Slack",
-              completedAt: new Date(),
-              updatedAt: new Date(),
-            }).where(eq(tasks.id, task.id));
-
-            if (task.assignedTo) {
-              await db.insert(messages).values({
-                type: "task_verification",
-                toAgentId: task.assignedTo,
-                taskId: task.id,
-                content: { action: "approved", message: "User approved your work via Slack." },
-              });
-            }
-            return `Approved: ${task.title}`;
-          } else {
-            const feedback = message ?? "Rejected via Slack — needs changes.";
-            await db.update(tasks).set({
-              status: "in_progress",
-              verificationStatus: "rejected",
-              verificationNotes: feedback,
-              updatedAt: new Date(),
-            }).where(eq(tasks.id, task.id));
-
-            if (task.assignedTo) {
-              await db.insert(messages).values({
-                type: "task_verification",
-                toAgentId: task.assignedTo,
-                taskId: task.id,
-                content: { action: "rejected", feedback },
-              });
-            }
-            return `Rejected: ${task.title}\nFeedback: ${feedback}`;
-          }
-        } catch (e) {
-          return `Error: ${e instanceof Error ? e.message : String(e)}`;
-        }
-      }
-
-      return `No pending inbox item matching "${prefix}".`;
     }
 
     return null;
@@ -305,21 +270,6 @@ export class SlackAdapter implements ChatAdapter {
   private registerAsNotifier(): void {
     if (this.notifierRegistered) return;
     this.notifierRegistered = true;
-
-    const typeIcons: Record<string, string> = {
-      proposal: "[Proposal]",
-      update: "[Update]",
-      question: "[Question]",
-      alert: "[Alert]",
-    };
-
-    this.userMessageHandler = (msg) => {
-      const icon = typeIcons[msg.type] ?? "[Message]";
-      const text = `${icon} *${msg.agentName}* (${msg.type})\n\n${msg.message}`;
-      this.broadcastToUser(text).catch((e) =>
-        log.warn({ error: String(e) }, "Failed to send user message via Slack"),
-      );
-    };
 
     this.reviewHandler = (review) => {
       const lines = [
@@ -337,19 +287,13 @@ export class SlackAdapter implements ChatAdapter {
       );
     };
 
-    onUserMessage(this.userMessageHandler);
     onReviewRequested(this.reviewHandler);
 
-    log.info("Slack registered as notifier for agent messages + reviews");
+    log.info("Slack registered as notifier for reviews");
   }
 
   private unregisterAsNotifier(): void {
     if (!this.notifierRegistered) return;
-
-    if (this.userMessageHandler) {
-      offUserMessage(this.userMessageHandler);
-      this.userMessageHandler = null;
-    }
 
     if (this.reviewHandler) {
       offReviewRequested(this.reviewHandler);

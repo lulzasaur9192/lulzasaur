@@ -1,9 +1,8 @@
 import { eq, and } from "drizzle-orm";
 import { getDb } from "../../db/client.js";
-import { tasks, messages, agents } from "../../db/schema.js";
+import { tasks, messages } from "../../db/schema.js";
 import { registerTool } from "../tool-registry.js";
 import { createChildLogger } from "../../utils/logger.js";
-import { createInboxItem, dismissStaleItemsForTask } from "../../inbox/user-inbox.js";
 import { resolveTaskId } from "../resolve-task.js";
 
 const log = createChildLogger("tool-request-review");
@@ -109,31 +108,7 @@ registerTool({
       },
     });
 
-    // Dismiss any stale pending inbox items for this task
-    await dismissStaleItemsForTask(input.task_id);
-
-    // Create inbox item for persistent tracking
-    let agentName = agentId.substring(0, 8);
-    try {
-      const [agent] = await db.select({ name: agents.name }).from(agents).where(eq(agents.id, agentId)).limit(1);
-      if (agent) agentName = agent.name;
-    } catch { /* fallback to ID prefix */ }
-
-    try {
-      await createInboxItem({
-        type: "review",
-        agentId,
-        agentName,
-        title: `Review: ${task.title}`,
-        body: input.summary + (input.evidence ? `\n\nEvidence: ${input.evidence}` : ""),
-        taskId: input.task_id,
-        metadata: { result: input.result ?? null },
-      });
-    } catch (e) {
-      log.warn({ error: String(e) }, "Failed to create inbox item for review");
-    }
-
-    // Notify all registered interfaces (legacy notifiers)
+    // Notify all registered interfaces (CLI, Slack)
     for (const notify of notifiers) {
       try {
         notify({

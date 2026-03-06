@@ -293,15 +293,15 @@ persistent: false                                  # true = long-lived
 | `sysadmin` | Monitor systems, maintain host | 4 + core | 1800s (scheduled) | Yes |
 | `worker-generic` | Execute a single assigned task | 6 + core | None | No |
 
-### Example Module: Prop Shop
+### Example Project: Prop Shop
 
-The `trading-agent` soul ships as an example of a domain-specific agent built on top of the core system. It's part of the **prop-shop** module — an automated paper trading system that demonstrates how to build project modules with their own agents, tasks, and workflows.
+The `trading-agent` soul ships as an example of a domain-specific agent built on top of the core system. It's part of the **prop-shop** project — an automated paper trading system that demonstrates how to build projects with their own agents, tasks, and workflows.
 
 | Soul | Intent | Caps | Heartbeat | Persistent |
 |------|--------|------|-----------|------------|
 | `trading-agent` | RSI oversold bounce signals for PLTR/GDX | 3 + core | 3600s (scheduled) | Yes |
 
-The prop-shop module lives in `modules/prop-shop/` and includes its own soul definitions, data pipeline scripts, risk management rules, and backtesting engine. See [docs/PROP_SHOP.md](docs/PROP_SHOP.md) for details and [docs/PROJECTS.md](docs/PROJECTS.md) for how to create your own modules.
+The prop-shop project lives in `projects/prop-shop/` and includes its own soul definitions, data pipeline scripts, risk management rules, and backtesting engine. See [docs/PROP_SHOP.md](docs/PROP_SHOP.md) for details and [docs/PROJECTS.md](docs/PROJECTS.md) for how to create your own projects.
 
 ## Tool System
 
@@ -758,7 +758,7 @@ lulzasaur/
 │   ├── writer.yaml
 │   ├── sysadmin.yaml
 │   └── worker-generic.yaml
-├── modules/                        # Project modules (YAML + workspaces)
+├── projects/                       # Project workspaces (YAML + code)
 ├── src/
 │   ├── index.ts                    # Entry point
 │   ├── config/                     # Environment + defaults

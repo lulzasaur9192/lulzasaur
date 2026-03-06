@@ -10,6 +10,7 @@ interface SpawnAgentInput {
   soul_name: string;
   model?: string;
   provider?: string;
+  project_id?: string;
   task_summary?: string;
 }
 
@@ -24,6 +25,7 @@ registerTool({
       soul_name: { type: "string", description: "Soul template to use (e.g. 'worker-generic', 'sub-orchestrator')" },
       model: { type: "string", description: "Override LLM model (optional)" },
       provider: { type: "string", description: "Override LLM provider (optional)" },
+      project_id: { type: "string", description: "Project ID to scope this agent to (optional — inherited from parent if not set)" },
       task_summary: { type: "string", description: "Brief summary of why this agent is being spawned" },
     },
     required: ["name", "soul_name"],
@@ -36,6 +38,9 @@ registerTool({
       return { error: `Parent agent ${agentId} not found` };
     }
 
+    // Inherit projectId from parent if not explicitly set
+    const projectId = params.project_id ?? parent.projectId ?? undefined;
+
     const child = await spawnChildAgent({
       name: params.name,
       soulName: params.soul_name,
@@ -43,6 +48,7 @@ registerTool({
       parentDepth: parent.depth,
       model: params.model,
       provider: params.provider,
+      projectId,
       taskSummary: params.task_summary,
     });
 

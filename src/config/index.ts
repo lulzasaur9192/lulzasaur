@@ -20,7 +20,7 @@ const envSchema = z.object({
   SHELL_TIMEOUT_MS: z.coerce.number().default(30000),
   SHELL_MAX_OUTPUT_BYTES: z.coerce.number().default(1_048_576),
 
-  MODULES_DIR: z.string().optional(),
+  PROJECTS_DIR: z.string().optional(),
 
   // Slack
   SLACK_BOT_TOKEN: z.string().optional(),

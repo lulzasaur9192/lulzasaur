@@ -27,14 +27,11 @@ import {
   reviewsCmd,
   approveTaskCmd,
   rejectTaskCmd,
-  inboxCmd,
-  respondInboxCmd,
   setupReviewNotifications,
   printHelp,
 } from "./interfaces/cli/commands.js";
 import { SlackAdapter } from "./interfaces/chat-adapters/slack.js";
 import { createChildLogger } from "./utils/logger.js";
-import { getPendingCount } from "./inbox/user-inbox.js";
 import { ensureProjectChannels, ensureSystemChannel, setSystemChannelId } from "./integrations/slack-channels.js";
 import { setSlackRef } from "./integrations/slack-ref.js";
 
@@ -42,6 +39,40 @@ import { setSlackRef } from "./integrations/slack-ref.js";
 import "./tools/index.js";
 
 const log = createChildLogger("main");
+
+let shuttingDown = false;
+
+async function gracefulShutdown(reason: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  console.log(`\n  \x1b[2mShutting down: ${reason}...\x1b[0m`);
+  log.info({ reason }, "Graceful shutdown initiated");
+
+  stopScheduler();
+
+  // Wait for active agents to finish (up to 30s for signal-based shutdown)
+  const deadline = Date.now() + 30_000;
+  const db = getDb();
+  while (Date.now() < deadline) {
+    const stillActive = await db
+      .select()
+      .from(agents)
+      .where(eq(agents.status, "active" as any));
+    if (stillActive.length === 0) break;
+    log.info({ remaining: stillActive.length }, "Waiting for active agents");
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  // Force remaining active agents to idle
+  await db
+    .update(agents)
+    .set({ status: "idle", currentCheckpoint: null, updatedAt: new Date() })
+    .where(eq(agents.status, "active" as any));
+
+  await closeDb();
+  process.exit(0);
+}
 
 export async function boot() {
   const config = loadConfig();
@@ -67,11 +98,11 @@ export async function boot() {
   const soulsDir = join(import.meta.dirname ? join(import.meta.dirname, "..") : process.cwd(), "souls");
   await syncSoulsFromDirectory(soulsDir);
 
-  // Sync projects from modules/ directory
-  const modulesDir = config.MODULES_DIR
-    ?? join(import.meta.dirname ? join(import.meta.dirname, "..") : process.cwd(), "modules");
-  await syncProjectsFromDirectory(modulesDir);
-  await syncProjectSouls(modulesDir);
+  // Sync projects from projects/ directory
+  const projectsDir = config.PROJECTS_DIR
+    ?? join(import.meta.dirname ? join(import.meta.dirname, "..") : process.cwd(), "projects");
+  await syncProjectsFromDirectory(projectsDir);
+  await syncProjectSouls(projectsDir);
 
   // 1. GC: Delete terminated temporary agents and their data
   const gcCount = await gcTerminatedAgents();
@@ -256,25 +287,16 @@ async function main() {
     output: process.stdout,
   });
 
-  const prompt = async () => {
-    try {
-      const pending = await getPendingCount();
-      if (pending > 0) {
-        process.stdout.write(`${YELLOW}[${pending} pending]${RESET} ${GREEN}>${RESET} `);
-      } else {
-        process.stdout.write(`${GREEN}>${RESET} `);
-      }
-    } catch {
-      process.stdout.write(`${GREEN}>${RESET} `);
-    }
+  const prompt = () => {
+    process.stdout.write(`${GREEN}>${RESET} `);
   };
 
-  await prompt();
+  prompt();
 
   rl.on("line", async (line) => {
     const input = line.trim();
     if (!input) {
-      await prompt();
+      prompt();
       return;
     }
 
@@ -314,12 +336,6 @@ async function main() {
           case "/goals":
             await goalsCmd(args[0]);
             break;
-          case "/inbox":
-            await inboxCmd();
-            break;
-          case "/respond":
-            await respondInboxCmd(args);
-            break;
           case "/reviews":
             await reviewsCmd();
             break;
@@ -342,7 +358,7 @@ async function main() {
       } catch (error) {
         console.error(`  ${YELLOW}Error: ${error instanceof Error ? error.message : String(error)}${RESET}`);
       }
-      await prompt();
+      prompt();
       return;
     }
 
@@ -388,15 +404,16 @@ async function main() {
     }
 
     console.log();
-    await prompt();
+    prompt();
   });
 
-  rl.on("close", async () => {
-    console.log(`\n  ${DIM}Shutting down...${RESET}`);
-    stopScheduler();
-    await closeDb();
-    process.exit(0);
+  rl.on("close", () => {
+    gracefulShutdown("CLI closed");
   });
+
+  // Signal handlers for clean shutdown
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM received"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT received"));
 }
 
 main().catch((error) => {

@@ -52,10 +52,8 @@ capabilities:
   - file_list
   - shell_exec
   - request_user_review
-personality: |
-  Senior engineering lead. Reads the codebase thoroughly before making any changes.
-  Builds detailed specs. Reviews Claude Code's plans before letting it execute.
-  Verifies everything works before reporting done. Never cuts corners.
+  - update_task_progress
+  - query_tasks
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.
   - ALWAYS read existing code before sending anything to Claude Code
@@ -66,11 +64,11 @@ constraints: |
   - Use plan mode first for any non-trivial change
   - After Claude Code executes, verify the output before completing the task
   - If Claude Code's output has errors, resume the session with specific fixes
-  - Set working_directory for every Claude Code call
+  - Set working_directory for every Claude Code call — this MUST be the project's projects/<project-name>/ directory. Never create files outside the project directory.
   - Use shell_exec only for verification (running tests, checking builds), not for writing code
   - NEVER call complete_task directly — always use request_user_review
   - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
-default_model: "meta-llama/Llama-3.3-70B-Instruct"
+default_model: "Qwen/Qwen2.5-72B-Instruct"
 default_provider: "huggingface"
 context_budget: 100000
 persistent: false

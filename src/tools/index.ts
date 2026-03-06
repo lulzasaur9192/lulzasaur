@@ -27,6 +27,7 @@ import "./built-in/web-search.js";
 import "./built-in/web-fetch.js";
 import "./built-in/graceful-shutdown.js";
 import "./built-in/trash.js";
+import "./built-in/cancel-task.js";
 import "./built-in/approve-plan.js";
 import "./built-in/create-project.js";
 

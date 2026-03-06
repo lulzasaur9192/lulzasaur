@@ -1,7 +1,6 @@
 import { useApp } from "../context/AppContext.js";
 import { Sidebar } from "./Sidebar.js";
 import { PageHeader } from "./PageHeader.js";
-import { InboxPage } from "../pages/InboxPage.js";
 import { AgentsPage } from "../pages/AgentsPage.js";
 import { AgentDetailPage } from "../pages/AgentDetailPage.js";
 import { TasksPage } from "../pages/TasksPage.js";
@@ -11,15 +10,16 @@ import { TokensPage } from "../pages/TokensPage.js";
 import { ProjectAgentsPage } from "../pages/ProjectAgentsPage.js";
 import { ProjectEpicsPage } from "../pages/ProjectEpicsPage.js";
 import { ProjectBulletinPage } from "../pages/ProjectBulletinPage.js";
+import { TrashPage } from "../pages/TrashPage.js";
 import type { Page } from "../types.js";
 
 const pageTitles: Record<Page, string> = {
-  inbox: "Inbox",
   agents: "Agents",
   tasks: "Tasks",
   bulletin: "Bulletin Board",
   activity: "Activity",
   tokens: "Token Usage",
+  trash: "Trash",
   "agent-detail": "",
   "project-agents": "",
   "project-epics": "",
@@ -27,12 +27,12 @@ const pageTitles: Record<Page, string> = {
 };
 
 const pageSubtitles: Record<string, string> = {
-  inbox: "Review pending items from your agents",
   agents: "Monitor and manage your agent fleet",
   tasks: "Track work across projects",
   bulletin: "Agent communications and updates",
   activity: "Schedules, heartbeats, and usage",
   tokens: "API usage and cost tracking",
+  trash: "Restore or permanently delete items",
 };
 
 function getPageTitle(page: Page, projectName: string | null, agentName?: string): string {
@@ -64,8 +64,6 @@ export function Layout() {
 
 function PageRouter({ page }: { page: Page }) {
   switch (page) {
-    case "inbox":
-      return <InboxPage />;
     case "agents":
       return <AgentsPage />;
     case "agent-detail":
@@ -78,6 +76,8 @@ function PageRouter({ page }: { page: Page }) {
       return <ActivityPage />;
     case "tokens":
       return <TokensPage />;
+    case "trash":
+      return <TrashPage />;
     case "project-agents":
       return <ProjectAgentsPage />;
     case "project-epics":

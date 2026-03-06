@@ -5,14 +5,13 @@ import type {
   Conversation,
   Epic,
   Heartbeat,
-  InboxItem,
-  InboxStatus,
   Project,
   ScheduleData,
   Task,
   TokenEntry,
   TokenHourly,
   TokenSummary,
+  TrashItem,
 } from "./types.js";
 
 async function api<T>(path: string, opts?: RequestInit): Promise<T> {
@@ -81,23 +80,6 @@ export const rejectTask = (id: string, feedback: string) =>
     body: JSON.stringify({ feedback }),
   });
 
-// ── Inbox ──
-export const fetchInbox = (status: InboxStatus) =>
-  api<InboxItem[]>(`/api/inbox?status=${status}`);
-
-export const fetchInboxCount = () =>
-  api<{ pending: number }>("/api/inbox/count");
-
-export const respondToInbox = (
-  id: string,
-  action: string,
-  message?: string
-) =>
-  api<void>(`/api/inbox/${id}/respond`, {
-    method: "POST",
-    body: JSON.stringify({ action, message: message || undefined }),
-  });
-
 // ── Bulletin ──
 export const fetchBulletin = (channel?: string, projectId?: string) => {
   const params = new URLSearchParams();
@@ -122,3 +104,16 @@ export const fetchTokenHourly = (hours: number) =>
 
 export const fetchTokenEntries = (hours: number) =>
   api<TokenEntry[]>(`/api/activity/tokens?hours=${hours}`);
+
+// ── Trash ──
+export const fetchTrash = (type?: string) =>
+  api<TrashItem[]>(`/api/trash${type ? `?type=${type}` : ""}`);
+
+export const restoreTrashItem = (id: string) =>
+  api<{ restored: boolean; warning?: string }>(`/api/trash/${id}/restore`, { method: "POST" });
+
+export const deleteTrashItem = (id: string) =>
+  api<{ deleted: boolean }>(`/api/trash/${id}`, { method: "DELETE" });
+
+export const emptyTrash = () =>
+  api<{ deleted: number }>(`/api/trash`, { method: "DELETE" });

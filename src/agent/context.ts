@@ -31,7 +31,7 @@ export interface ContextBuildResult {
  */
 export async function buildContext(
   agentId: string,
-  soul: { name: string; purpose: string; intent?: string | null; goals?: string[]; personality: string | null; constraints: string | null; capabilities: string[] },
+  soul: { name: string; purpose: string; intent?: string | null; goals?: string[]; personality: string | null; constraints: string | null; capabilities: string[]; persistent?: boolean },
   contextBudget: number,
 ): Promise<ContextBuildResult> {
   const db = getDb();

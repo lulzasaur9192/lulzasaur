@@ -22,7 +22,7 @@ export async function resolveAgentId(nameOrId: string, callerAgentId?: string): 
     .where(ne(agents.status, "terminated"));
 
   // Try exact name match first
-  const byName = allAgents.find((a) => a.name === nameOrId);
+  const byName = allAgents.find((a) => a.name != null && a.name === nameOrId);
   if (byName) return byName.id;
 
   // Try ID prefix match
@@ -31,7 +31,7 @@ export async function resolveAgentId(nameOrId: string, callerAgentId?: string): 
 
   // Try case-insensitive name match
   const lower = nameOrId.toLowerCase();
-  const byLower = allAgents.find((a) => a.name.toLowerCase() === lower);
+  const byLower = allAgents.find((a) => a.name?.toLowerCase() === lower);
   if (byLower) return byLower.id;
 
   throw new Error(`Agent not found: "${nameOrId}". Available: ${allAgents.map((a) => a.name).join(", ")}`);

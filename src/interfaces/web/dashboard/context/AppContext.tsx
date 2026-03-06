@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Agent, Page, Project } from "../types.js";
-import { fetchAgents, fetchInboxCount, fetchProjects } from "../api.js";
+import { fetchAgents, fetchProjects } from "../api.js";
 
 interface AppState {
   currentPage: Page;
@@ -17,7 +17,6 @@ interface AppState {
   currentProjectName: string | null;
   agents: Agent[];
   projects: Project[];
-  inboxCount: number;
   showTerminated: boolean;
   modalOpen: boolean;
 }
@@ -28,9 +27,7 @@ interface AppContextValue extends AppState {
   setCurrentAgent: (id: string | null) => void;
   setShowTerminated: (v: boolean) => void;
   setModalOpen: (v: boolean) => void;
-  setInboxCount: (n: number) => void;
   refreshProjects: () => Promise<void>;
-  refreshInboxCount: () => Promise<void>;
 }
 
 interface NavigateOpts {
@@ -43,14 +40,13 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
-    currentPage: "inbox",
+    currentPage: "agents",
     currentAgent: null,
     detailAgentId: null,
     currentProjectFilter: null,
     currentProjectName: null,
     agents: [],
     projects: [],
-    inboxCount: 0,
     showTerminated: false,
     modalOpen: false,
   });
@@ -81,10 +77,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, modalOpen }));
   }, []);
 
-  const setInboxCount = useCallback((inboxCount: number) => {
-    setState((s) => ({ ...s, inboxCount }));
-  }, []);
-
   const refreshProjects = useCallback(async () => {
     try {
       const projects = await fetchProjects();
@@ -92,17 +84,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch { /* silent */ }
   }, []);
 
-  const refreshInboxCount = useCallback(async () => {
-    try {
-      const data = await fetchInboxCount();
-      setState((s) => ({ ...s, inboxCount: data.pending }));
-    } catch { /* silent */ }
-  }, []);
-
   // Initial load
   useEffect(() => {
     refreshProjects();
-    refreshInboxCount();
     fetchAgents().then((agents) => {
       const list = agents.map((a: any) => a.agent || a);
       setState((s) => ({
@@ -111,7 +95,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentAgent: list.length > 0 ? list[0]!.id : null,
       }));
     }).catch(() => {});
-  }, [refreshProjects, refreshInboxCount]);
+  }, [refreshProjects]);
 
   return (
     <AppContext.Provider
@@ -122,9 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentAgent,
         setShowTerminated,
         setModalOpen,
-        setInboxCount,
         refreshProjects,
-        refreshInboxCount,
       }}
     >
       {children}

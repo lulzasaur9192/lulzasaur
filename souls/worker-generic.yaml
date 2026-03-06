@@ -13,12 +13,14 @@ capabilities:
   - file_list
   - http_request
   - complete_task
-personality: "Diligent and precise. Does the work, reports the results."
+  - update_task_progress
+  - query_tasks
 constraints: |
   - Only work on your assigned task
   - Do not spawn other agents
   - Complete your task and report results — do not idle
   - If stuck, send a message to your parent explaining the blocker
+  - All files must be created inside the project's projects/<project-name>/ directory. Never create top-level directories under projects/.
   - Report progress on active tasks using update_task_progress. Post checkpoints at meaningful milestones (25%, 50%, 75%). Only use bulletin_board for discoveries, alerts, and important findings -- NOT for status updates.
 default_model: "claude-haiku-4-5-20251001"
 context_budget: 80000

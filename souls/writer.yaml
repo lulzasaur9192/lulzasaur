@@ -17,7 +17,6 @@ capabilities:
   - request_user_review
   - update_task_progress
   - query_tasks
-personality: "Clear writer. Gets to the point. Matches tone to audience."
 constraints: |
   - Communicate with users by sending messages to main-orchestrator via send_message. The orchestrator will relay important updates.
   - Always save output to a file — don't just return text

@@ -6,13 +6,11 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { SSEClaudeCodeEvent, SSEInboxCount } from "../types.js";
+import type { SSEClaudeCodeEvent } from "../types.js";
 
 type SSEEventType =
   | "agent_update"
   | "task_update"
-  | "inbox_count"
-  | "inbox_item"
   | "claude_code_output";
 
 type SSEHandler = (data: any) => void;
@@ -47,8 +45,6 @@ export function SSEProvider({ children }: { children: ReactNode }) {
     const events: SSEEventType[] = [
       "agent_update",
       "task_update",
-      "inbox_count",
-      "inbox_item",
       "claude_code_output",
     ];
 

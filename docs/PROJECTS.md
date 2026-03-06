@@ -1,13 +1,13 @@
-# Projects / Modules System
+# Projects System
 
-Lulzasaur supports long-lived **projects** — self-contained modules that define their own agents, scoped tasks (epics/stories), and project-specific bulletin boards. All managed by the single global orchestrator.
+Lulzasaur supports long-lived **projects** — self-contained workspaces that define their own agents, scoped tasks (epics/stories), and project-specific bulletin boards. All managed by the single global orchestrator.
 
 ## Directory Structure
 
-Projects live in the `modules/` directory at the repo root:
+Projects live in the `projects/` directory at the repo root:
 
 ```
-modules/
+projects/
 ├── prop-shop/
 │   ├── project.yaml          # Project definition (required)
 │   └── souls/                # Project-specific agent definitions
@@ -25,7 +25,7 @@ modules/
 ### 1. Create the directory
 
 ```bash
-mkdir -p modules/my-project/souls
+mkdir -p projects/my-project/souls
 ```
 
 ### 2. Define `project.yaml`
@@ -41,10 +41,10 @@ The `name` field must be a unique slug — it's the primary key for the project.
 
 ### 3. Add soul definitions
 
-Create YAML files in `modules/my-project/souls/`. These follow the exact same format as global souls in `souls/`:
+Create YAML files in `projects/my-project/souls/`. These follow the exact same format as global souls in `souls/`:
 
 ```yaml
-# modules/my-project/souls/my-agent.yaml
+# projects/my-project/souls/my-agent.yaml
 name: my-agent
 purpose: "What this agent does within the project"
 intent: "Core directive / prime objective"
@@ -79,8 +79,8 @@ npm start
 ```
 
 On boot, Lulzasaur will:
-1. Scan `modules/*/project.yaml` and upsert to the `projects` table
-2. Scan `modules/*/souls/*.yaml` and upsert to `soul_definitions` with `projectId` set
+1. Scan `projects/*/project.yaml` and upsert to the `projects` table
+2. Scan `projects/*/souls/*.yaml` and upsert to `soul_definitions` with `projectId` set
 3. Create agents for all persistent project souls
 
 ## How Projects Work
@@ -157,19 +157,19 @@ GET  /api/bulletin?projectId=X           — Filter bulletin by project
 
 | Env Variable | Default | Description |
 |---|---|---|
-| `MODULES_DIR` | `{cwd}/modules` | Path to the modules directory |
+| `PROJECTS_DIR` | `{cwd}/projects` | Path to the projects directory |
 
 ## Example: Prop Shop Trading Project
 
 ```yaml
-# modules/prop-shop/project.yaml
+# projects/prop-shop/project.yaml
 name: prop-shop
 display_name: Prop Shop Trading
 description: Automated proprietary trading system with market analysis
 ```
 
 ```yaml
-# modules/prop-shop/souls/market-analyst.yaml
+# projects/prop-shop/souls/market-analyst.yaml
 name: market-analyst
 purpose: "Analyze market data and identify trading opportunities"
 intent: "Find profitable trades by analyzing price action, volume, and market sentiment"

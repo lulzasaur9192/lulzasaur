@@ -3,16 +3,16 @@ import { useApp } from "../context/AppContext.js";
 import type { Page, Project } from "../types.js";
 
 const navItems: { page: Page; label: string }[] = [
-  { page: "inbox", label: "Inbox" },
   { page: "agents", label: "Agents" },
   { page: "tasks", label: "Tasks" },
   { page: "bulletin", label: "Bulletin" },
   { page: "activity", label: "Activity" },
   { page: "tokens", label: "Tokens" },
+  { page: "trash", label: "Trash" },
 ];
 
 export function Sidebar() {
-  const { currentPage, navigate, projects, inboxCount, currentProjectFilter } =
+  const { currentPage, navigate, projects, currentProjectFilter } =
     useApp();
 
   return (
@@ -28,9 +28,6 @@ export function Sidebar() {
           onClick={() => navigate(page)}
         >
           {label}
-          {page === "inbox" && inboxCount > 0 && (
-            <span className="inbox-badge">{inboxCount}</span>
-          )}
         </a>
       ))}
       {projects.length > 0 && (

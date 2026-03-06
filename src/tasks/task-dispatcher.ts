@@ -200,6 +200,7 @@ export async function dispatchTask(
       soulName: soulType,
       parentId,
       parentDepth: parentAgent.depth,
+      projectId: task.projectId ?? undefined,
       taskSummary: task.title,
     });
 

@@ -146,6 +146,7 @@ export function buildSystemPrompt(soul: {
   personality: string | null;
   constraints: string | null;
   capabilities: string[];
+  persistent?: boolean;
 }, project?: {
   id: string;
   name: string;
@@ -178,10 +179,6 @@ export function buildSystemPrompt(soul: {
     parts.push("", `## Constraints`, soul.constraints);
   }
 
-  if (soul.capabilities.length > 0) {
-    parts.push("", `## Available Capabilities`, soul.capabilities.map((c) => `- ${c}`).join("\n"));
-  }
-
   // Inject project context if agent belongs to a project
   if (project) {
     parts.push(
@@ -201,69 +198,61 @@ export function buildSystemPrompt(soul: {
     );
   }
 
-  // Inject modules directory so agents know where to put work
+  // Workspace — single line after project context
   const config = getConfig();
-  const modulesDir = config.MODULES_DIR
-    ?? (import.meta.dirname ? join(import.meta.dirname, "..", "..", "modules") : join(process.cwd(), "modules"));
-  parts.push(
-    "",
-    "## Workspace",
-    `All project work should be created under: ${modulesDir}`,
-    "Each project gets its own subdirectory (e.g. modules/my-project/).",
-  );
+  const projectsDir = config.PROJECTS_DIR
+    ?? (import.meta.dirname ? join(import.meta.dirname, "..", "..", "projects") : join(process.cwd(), "projects"));
+  parts.push("", `Work directory: ${projectsDir}`);
 
-  // Only include system interfaces section if agent has user-facing capabilities
-  if (soul.capabilities.includes("message_user") || soul.capabilities.includes("request_user_review")) {
+  // Tiered memory instructions based on agent capabilities + persistence
+  const hasKG = soul.capabilities.includes("knowledge_graph");
+  const isPersistent = soul.persistent ?? false;
+
+  if (!isPersistent) {
+    // Tier C — Ephemeral agents (worker-generic, sub-orchestrator)
     parts.push(
       "",
-      "## System Interfaces",
-      "Active: CLI, Web (localhost:3000), Slack (if configured).",
-      "message_user and request_user_review deliver to ALL active interfaces.",
+      "## Memory",
+      "Your memory blocks are in context below. Use update_memory_block to save important findings before completing your task.",
+      "What you don't save, you will forget.",
+    );
+  } else if (hasKG) {
+    // Tier A — Persistent agents with knowledge_graph capability
+    parts.push(
+      "",
+      "## Memory",
+      "You have persistent memory that survives context compaction.",
+      "",
+      "**Core blocks** (always in context — update with update_memory_block):",
+      "- persona: your role and approach",
+      "- learned_preferences: user/project conventions",
+      "- working_context: current state, pending work, blockers (update frequently)",
+      "- domain_knowledge: architecture decisions, key patterns",
+      "",
+      "**Knowledge graph** (kg_store / kg_search / kg_traverse): structured knowledge with relationships — decisions, lessons, research. Use kg_search before starting tasks for prior attempts.",
+      "**Key-value notes** (write_memory / read_memory): quick scratch storage.",
+      "**Reflect** (reflect): extract learnings from recent conversation into memory blocks.",
+      "",
+      "What you don't save, you will forget.",
+    );
+  } else {
+    // Tier B — Persistent agents without knowledge_graph
+    parts.push(
+      "",
+      "## Memory",
+      "You have persistent memory that survives context compaction.",
+      "",
+      "**Core blocks** (always in context — update with update_memory_block):",
+      "- persona: your role and approach",
+      "- learned_preferences: user/project conventions",
+      "- working_context: current state, pending work, blockers (update frequently)",
+      "- domain_knowledge: architecture decisions, key patterns",
+      "",
+      "**Key-value notes** (write_memory / read_memory): quick scratch storage.",
+      "",
+      "What you don't save, you will forget.",
     );
   }
-
-  parts.push(
-    "",
-    "## Rules",
-    "- Use tools to do work, not just describe it. Use complete_task with results when done.",
-    "- Never claim done without verification. Query for info — don't assume.",
-  );
-
-  parts.push(
-    "",
-    "## Memory",
-    "You have persistent memory that survives context compaction. USE IT.",
-    "",
-    "### Core Memory Blocks (always in context):",
-    "Your core memory blocks (persona, learned_preferences, working_context, domain_knowledge) are always",
-    "visible to you at the end of this system prompt. Update them with update_memory_block.",
-    "- persona: Your self-understanding. Update as you learn about your role and approach.",
-    "- learned_preferences: User/project preferences you discover. Coding style, conventions, tool choices.",
-    "- working_context: Your scratchpad — current state, pending work, blockers. Update frequently.",
-    "- domain_knowledge: Key domain facts, architecture decisions, important patterns.",
-    "",
-    "### When to save:",
-    "- Update working_context at the start and end of each task",
-    "- Update learned_preferences when you discover user or project preferences",
-    "- Update domain_knowledge when you learn important facts about the system",
-    "- Use kg_store for structured knowledge with relationships — decisions, lessons, research",
-    "- Use write_memory for quick key-value notes",
-    "",
-    "### When to recall:",
-    "- Your memory blocks are already in context — check them first",
-    "- Before starting any task: kg_search for prior attempts or related knowledge",
-    "- Use reflect periodically to extract learnings from your conversation into memory blocks",
-    "",
-    "### Tool choice:",
-    "- update_memory_block: update your core memory blocks (always in context)",
-    "- reflect: analyze recent conversation and get suggestions for memory updates",
-    "- write_memory / read_memory: quick key-value notes",
-    "- kg_store: structured knowledge with relationships — decisions, lessons, research",
-    "- kg_search: find what you or other agents have learned (use include_other_agents for cross-agent)",
-    "- kg_traverse: explore connections from a known entity",
-    "",
-    "Do not rely on conversation context alone — it gets compacted. What you don't save, you will forget.",
-  );
 
   return parts.join("\n");
 }
