@@ -287,8 +287,17 @@ persistent: false                                  # true = long-lived
 | `researcher` | Gather info, produce findings | 4 + core | 900s (scheduled) | Yes |
 | `writer` | Write docs, emails, reports | 5 + core | None | No |
 | `sysadmin` | Monitor systems, maintain host | 4 + core | 1800s (scheduled) | Yes |
-| `trading-agent` | RSI oversold bounce signals for PLTR/GDX | 3 + core | 3600s (scheduled) | Yes |
 | `worker-generic` | Execute a single assigned task | 6 + core | None | No |
+
+### Example Module: Prop Shop
+
+The `trading-agent` soul ships as an example of a domain-specific agent built on top of the core system. It's part of the **prop-shop** module — an automated paper trading system that demonstrates how to build project modules with their own agents, tasks, and workflows.
+
+| Soul | Intent | Caps | Heartbeat | Persistent |
+|------|--------|------|-----------|------------|
+| `trading-agent` | RSI oversold bounce signals for PLTR/GDX | 3 + core | 3600s (scheduled) | Yes |
+
+The prop-shop module lives in `modules/prop-shop/` and includes its own soul definitions, data pipeline scripts, risk management rules, and backtesting engine. See [docs/PROP_SHOP.md](docs/PROP_SHOP.md) for details and [docs/PROJECTS.md](docs/PROJECTS.md) for how to create your own modules.
 
 ## Tool System
 

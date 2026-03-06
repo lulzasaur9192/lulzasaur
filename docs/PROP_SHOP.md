@@ -1,6 +1,8 @@
 # Prop-Shop: Automated Trading System
 
-An autonomous trading system built on top of Lulzasaur. A team of specialized agents runs a daily pipeline — fetching market data, researching entry signals, managing risk, and executing trades — without manual intervention.
+An example module built on top of Lulzasaur that demonstrates how to build a domain-specific project with its own agents, tasks, and workflows. A team of specialized agents runs a daily pipeline — fetching market data, researching entry signals, managing risk, and executing trades.
+
+> **This is an example module.** It ships with Lulzasaur to demonstrate the project/module system. You can use it as a reference for building your own modules, or adapt it for your own trading strategies.
 
 ---
 
@@ -9,11 +11,10 @@ An autonomous trading system built on top of Lulzasaur. A team of specialized ag
 | Item | Status |
 |------|--------|
 | Mode | **Paper trading** (Tastytrade paper account) |
+| Broker integration | **Not yet connected** — signal generation and backtesting work, but trade execution requires Tastytrade API setup (see below) |
 | Capital | **$1,000** starting balance |
-| Active since | March 3, 2026 |
 | Tracked symbols | PLTR, GDX (+ SPY/VIX for regime signals) |
 | Strategy | RSI Oversold Bounce — RSI(14) < 40 entry |
-| Open positions | 0 (as of Day 1 close) |
 
 > **Paper trading only.** No real money at risk. The system will not transition to live trading without explicit user approval.
 
@@ -101,7 +102,7 @@ The system operates on **Pacific Time** (Tastytrade / US markets):
 
 ## Monitoring
 
-Watch the bulletin board `status-updates` channel for real-time activity from prop-shop agents. Key posts to watch for:
+Watch the bulletin board `discoveries` channel for findings from prop-shop agents, and use `get_system_health` for real-time task progress. Key posts to watch for:
 
 - **prop-orchestrator** — Daily cycle status, critical decisions
 - **position-monitor** — Open position alerts, exit signals
@@ -135,6 +136,27 @@ modules/prop-shop/
 ├── souls/                       # Agent soul definitions
 └── logs/                        # Daily pipeline logs
 ```
+
+---
+
+## Tastytrade Setup (Not Yet Integrated)
+
+The prop-shop is designed to execute trades via the Tastytrade API, but broker integration is **not yet connected**. Currently the system generates signals and backtests strategies — trade execution is a placeholder.
+
+To complete the integration, you would need:
+
+1. **Create a Tastytrade account** at [tastytrade.com](https://tastytrade.com/)
+2. **Open a paper trading account** (no real money required)
+3. **Generate API credentials** from your Tastytrade account settings
+4. **Add to `.env`:**
+   ```bash
+   TASTYTRADE_USERNAME=your-username
+   TASTYTRADE_PASSWORD=your-password
+   TASTYTRADE_ACCOUNT_ID=your-paper-account-id
+   ```
+5. **Implement the API client** in `modules/prop-shop/src/trade_executor.py`
+
+The Tastytrade API docs are at [developer.tastytrade.com](https://developer.tastytrade.com/). This is left as an exercise — the data pipeline, signal generation, backtesting, and risk management are all functional without it.
 
 ---
 
