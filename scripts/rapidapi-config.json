@@ -1,0 +1,208 @@
+{
+  "defaults": {
+    "pricing": {
+      "BASIC":  { "price": 0, "requests": 50 },
+      "PRO":    { "price": 9.99, "requests": 1000 },
+      "ULTRA":  { "price": 29.99, "requests": 5000 },
+      "MEGA":   { "price": 99.99, "requests": 25000 }
+    }
+  },
+  "apis": {
+    "tcgplayer-price-data": {
+      "id": "9212915c-be89-4ce9-b6a9-6e2a109b09ef",
+      "name": "TCGPlayer Price Data",
+      "shortDescription": "Search TCGPlayer for trading card prices — Pokémon, Magic: The Gathering, Yu-Gi-Oh!, Lorcana & more. Returns market prices, lowest listings, set info, rarity, condition, and card images.",
+      "longDescription": "Access real-time TCGPlayer marketplace data for all major trading card games. Search by card name and get market prices, lowest listings, price trends, rarity, condition grades, set details, and high-res images. Perfect for price tracking bots, collection managers, arbitrage tools, and market research dashboards. Supports Pokémon, Magic: The Gathering, Yu-Gi-Oh!, Disney Lorcana, Flesh and Blood, and more. Returns structured JSON with up to 50 results per query.",
+      "pricing": "monetized"
+    },
+    "reverb-music-gear-listings": {
+      "id": "acaa68f9-7171-4e2b-b674-9221b5331ff4",
+      "name": "Reverb Music Gear Listings",
+      "shortDescription": "Search Reverb.com for new and used music gear — guitars, amps, pedals, synths, drums & more. Returns prices, conditions, seller ratings, and listing URLs.",
+      "longDescription": "Access Reverb.com marketplace data for musical instruments and audio equipment. Search for guitars, bass, amplifiers, effects pedals, synthesizers, drums, DJ gear, and studio equipment. Returns listing prices, item condition (mint, excellent, good, fair), seller ratings, shipping info, and direct listing URLs. Ideal for gear price comparison, market analysis, resale arbitrage, and building music gear aggregators. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "thumbtack-pro-directory": {
+      "id": "d10fffaf-cabf-4dee-bca4-413443592294",
+      "name": "Thumbtack Pro Directory",
+      "shortDescription": "Search Thumbtack for local service professionals — plumbers, electricians, cleaners, movers & 1000+ categories. Returns ratings, reviews, pricing, and hire counts.",
+      "longDescription": "Access Thumbtack's directory of local service professionals across 1000+ categories. Find plumbers, electricians, house cleaners, movers, painters, landscapers, tutors, and more. Returns business name, ratings, review counts, approximate pricing, number of hires, years in business, and service area. Perfect for lead generation tools, contractor comparison apps, home service aggregators, and local business intelligence. Filter by city/state location.",
+      "pricing": "monetized"
+    },
+    "poshmark-fashion-resale": {
+      "id": "84f555f0-a70f-4551-a147-972b9762325e",
+      "name": "Poshmark Fashion Resale",
+      "shortDescription": "Search Poshmark for secondhand fashion — clothing, shoes, bags & accessories. Filter by brand, category, price. Returns sizes, conditions, seller ratings, and photos.",
+      "longDescription": "Access Poshmark resale marketplace data for fashion and accessories. Search designer and everyday brands for clothing, shoes, handbags, jewelry, and home goods. Filter by brand, category, price range, and sort order. Returns listing title, price, size, condition, seller rating, photos, and listing URL. Ideal for resale arbitrage tools, fashion price trackers, inventory sourcing bots, and market research. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "craigslist-classifieds-search": {
+      "id": "e71a5148-76a7-485c-9cbb-3786775e83bd",
+      "name": "Craigslist Classifieds Search",
+      "shortDescription": "Search Craigslist listings by city and category — housing, jobs, for sale, services & more. Returns prices, locations, coordinates, and posting dates.",
+      "longDescription": "Access Craigslist classified listings across all US cities and categories. Search for-sale items, housing, jobs, services, gigs, and community posts. Filter by city, category, price range, and sort order. Returns listing title, price, location, GPS coordinates, posting date, and listing URL. Perfect for local market research, deal-finding bots, rental trackers, job aggregators, and classifieds data analysis. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "stubhub-event-tickets": {
+      "id": "b12f9947-1366-424c-b7ea-19610c1a404e",
+      "name": "StubHub Event Tickets",
+      "shortDescription": "Search StubHub for concert, sports, and event tickets. Get event dates, venues, ticket price ranges, availability, and location coordinates.",
+      "longDescription": "Access StubHub event ticket marketplace data. Search for concerts, sports games, theater, comedy, festivals, and live events. Returns event name, date, venue, city, ticket price ranges (min/max), availability status, and GPS coordinates. Filter by location radius with latitude/longitude. Ideal for ticket price trackers, event aggregators, travel planning tools, and entertainment market analysis. Up to 50 events per search.",
+      "pricing": "monetized"
+    },
+    "swappa-used-electronics": {
+      "id": "379d121b-a629-45fb-95bb-2b0b11fda3df",
+      "name": "Swappa Used Electronics",
+      "shortDescription": "Search Swappa for used phones, laptops, tablets & tech. Get pricing, condition grades, carrier info, storage options, and seller ratings.",
+      "longDescription": "Access Swappa's verified marketplace for used electronics. Search for smartphones, laptops, tablets, smartwatches, cameras, and gaming devices. Returns device model, price, condition grade (mint, good, fair), carrier compatibility, storage capacity, battery health, seller rating, and listing URL. Filter by carrier and storage. Perfect for electronics price comparison, resale value tracking, refurbishment sourcing, and tech market analytics. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "offerup-local-marketplace": {
+      "id": "2d0d55a1-1fd4-4ab0-896f-c8c07055dea5",
+      "name": "OfferUp Local Marketplace",
+      "shortDescription": "Search OfferUp for local buy/sell listings — electronics, furniture, vehicles, clothing & more. Filter by location, price range, and sort order.",
+      "longDescription": "Access OfferUp local marketplace data across the US. Search for electronics, furniture, vehicles, clothing, home goods, sporting goods, and more. Filter by location, search radius, min/max price, and sort order. Returns listing title, price, condition, seller info, photos, and location. Ideal for local deal-finding bots, marketplace aggregators, price comparison tools, and secondhand market research. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "goodreads-book-data": {
+      "id": "c85a8bf0-8ef6-4039-b753-4d3e23de9eec",
+      "name": "Goodreads Book Data",
+      "shortDescription": "Search Goodreads for book ratings, reviews, and shelf data. Browse by genre or shelf name. Returns ratings, review counts, author info, and cover images.",
+      "longDescription": "Access Goodreads community book data by genre and shelf. Browse popular genres like fiction, mystery, sci-fi, romance, non-fiction, and more. Returns book title, author, average rating, review count, number of ratings, cover image, and Goodreads URL. Perfect for book recommendation engines, reading list builders, publishing market research, and literary data analysis. Up to 50 books per search.",
+      "pricing": "monetized"
+    },
+    "abebooks-rare-used-books": {
+      "id": "edcad097-97f3-4836-85ee-ad027602c1a6",
+      "name": "AbeBooks Rare & Used Books",
+      "shortDescription": "Search AbeBooks for rare, used, and out-of-print books. Get ISBN, pricing, condition, edition info, and seller details from thousands of booksellers worldwide.",
+      "longDescription": "Access AbeBooks marketplace data from thousands of independent booksellers worldwide. Search for rare, antiquarian, used, and out-of-print books. Returns title, author, ISBN, price, condition, edition, publisher, publication year, binding type, and seller details. Perfect for book collectors, rare book dealers, library acquisition tools, academic research, and book price comparison. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "thriftbooks-used-books-prices": {
+      "id": "b3cc442c-f72e-4a23-9f52-0aca3a49078f",
+      "name": "ThriftBooks Used Books & Prices",
+      "shortDescription": "Search ThriftBooks for used and new books at discount prices. Get titles, authors, ISBNs, prices, conditions, formats, and availability.",
+      "longDescription": "Access ThriftBooks marketplace data for millions of used and new books. Search by title, author, or keyword. Returns book title, author, price, condition (like new, very good, good, acceptable), format (hardcover, paperback, ebook), ISBN, cover image, and availability status. Ideal for book price comparison tools, reading list builders, used book sourcing, and publishing market analytics. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "houzz-home-professional-directory": {
+      "id": "ce77bb8b-2fe8-44e0-be04-4088d06be7ea",
+      "name": "Houzz Home Professional Directory",
+      "shortDescription": "Search Houzz for home service professionals — contractors, interior designers, architects, landscapers & more. Get ratings, reviews, contact info, and portfolios.",
+      "longDescription": "Access Houzz's directory of home improvement and design professionals. Search for general contractors, interior designers, architects, kitchen/bath remodelers, landscapers, and more. Returns business name, ratings, review count, contact info, website, social media links, service area, and portfolio details. Perfect for lead generation, contractor comparison tools, home service aggregators, and real estate industry research. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "bonanza-online-marketplace": {
+      "id": "df8a3377-8c8f-4344-b475-2da3e3655401",
+      "name": "Bonanza Online Marketplace",
+      "shortDescription": "Search Bonanza marketplace for vintage items, collectibles, fashion, home goods & more. Get pricing, seller info, and product details.",
+      "longDescription": "Access Bonanza marketplace listings — a popular eBay alternative for unique and vintage goods. Search for collectibles, antiques, fashion, jewelry, home décor, crafts, and more. Returns item title, price, condition, seller info, photos, and listing URL. Ideal for vintage item sourcing, collectibles price tracking, marketplace aggregation, and e-commerce research. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "imdb-movies-tv-shows": {
+      "id": "08f8cb93-c786-4d0a-8234-67abfb45c5eb",
+      "name": "IMDb Movies & TV Shows",
+      "shortDescription": "Search IMDb for movies and TV shows. Get ratings, cast, plot summaries, box office data. Browse Top 250, Most Popular, and TV charts.",
+      "longDescription": "Access IMDb movie and TV show data. Search by title or browse curated charts: Top 250 Movies, Top 250 TV, MovieMeter (trending), and TVMeter. Returns title, year, rating, vote count, cast, plot summary, genres, runtime, box office gross, and poster image. Perfect for entertainment recommendation engines, movie review aggregators, streaming content analysis, and film industry research. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "redfin-real-estate-property-data": {
+      "id": "4ba6f8f3-79b4-4c7d-abf1-2dfeea5debf6",
+      "name": "Redfin Real Estate Property Data",
+      "shortDescription": "Search Redfin for real estate listings. Get property details — price, beds, baths, sqft, year built, MLS data, price history, and GPS coordinates.",
+      "longDescription": "Access Redfin real estate listing data. Search any Redfin URL for active, pending, and sold properties. Returns price, beds, baths, square footage, lot size, year built, property type, MLS number, listing status, price history, HOA fees, and GPS coordinates. Ideal for real estate investment analysis, property comparison tools, market trend dashboards, and automated home valuations. Up to 50 listings per search.",
+      "pricing": "monetized"
+    },
+    "grailed-designer-fashion-marketplace": {
+      "id": "eed57d62-6561-435e-a82c-77023ce7b618",
+      "name": "Grailed Designer Fashion Marketplace",
+      "shortDescription": "Search Grailed for designer and streetwear clothing — Supreme, Rick Owens, Comme des Garcons & more. Get prices, conditions, seller ratings, and photos.",
+      "longDescription": "Access Grailed marketplace data for luxury and streetwear fashion. Search for designer clothing, footwear, and accessories from brands like Supreme, Rick Owens, Comme des Garcons, Balenciaga, and more. Filter by price range, department, and condition. Returns listing title, price, condition, size, seller rating, photos, and listing URL. Perfect for fashion resale arbitrage, streetwear price tracking, and luxury market analytics. Up to 50 results per search.",
+      "pricing": "monetized"
+    },
+    "psa-card-population-report": {
+      "id": "36c7ea31-71c6-49b7-91b6-68d9b6d20569",
+      "name": "PSA Card Population Report",
+      "shortDescription": "Look up PSA graded card population reports by cert number or spec ID. Returns card details, grade, and full population breakdown from Auth through PSA 10.",
+      "longDescription": "Access PSA (Professional Sports Authenticator) card grading data. Look up any PSA-graded card by certification number to get card year, brand, subject, grade, and qualifier. Returns complete population report showing how many cards exist at each grade level from Authentic through PSA 10 Gem Mint. Essential for trading card investors, collectors, dealers, and market analysts tracking card scarcity and value.",
+      "pricing": "monetized"
+    },
+    "nurse-license-verification": {
+      "id": "952ac022-7cd9-4806-835d-9bcbc561c6ca",
+      "name": "Nurse License Verification",
+      "shortDescription": "Verify nurse licenses in FL and NY. Search by license number or name. Returns license status, expiration, type (RN, LPN, NP, APRN, CNA), and enforcement actions.",
+      "longDescription": "Verify nursing licenses from official state boards in Florida (DOH MQA) and New York (NYSED). Search by license number or last name. Returns license status (active, inactive, expired), expiration date, license type (RN, LPN, NP, APRN, CNA), qualifications, and any enforcement or disciplinary actions. Essential for healthcare HR departments, staffing agencies, compliance teams, and credentialing verification organizations (CVOs). Up to 25 results per search.",
+      "pricing": "monetized"
+    },
+    "contractor-license-verification": {
+      "id": "2e7d2204-1285-4f11-be1b-54f1bfe82985",
+      "name": "Contractor License Verification",
+      "shortDescription": "Verify contractor licenses in CA, TX, FL, and NY. Search by license number, name, or business. Returns status, expiration, classifications, and contact info.",
+      "longDescription": "Verify contractor licenses from official state licensing boards: California CSLB, Texas TDLR, Florida DBPR, and New York City. Search by license number, person name, or business name. Returns license status (active, expired, suspended), expiration date, license classifications, bond info, workers comp status, and contact details. Essential for real estate due diligence, property management, insurance verification, and homeowner protection. Up to 25 results per search.",
+      "pricing": "monetized"
+    },
+    "nyc-building-violations": {
+      "id": "cd69c007-0769-4770-8d86-79a8fc8177a3",
+      "name": "NYC Building Violations",
+      "shortDescription": "Search NYC DOB building violations by address, BIN, or block/lot. Returns violation type, status, penalties, dates, and GPS coordinates from 3 official datasets.",
+      "longDescription": "Access NYC Department of Buildings violation records from three official datasets: DOB Violations, DOB Safety Violations, and DOB ECB Violations. Search by address, BIN (Building Identification Number), or block/lot. Returns violation number, type, category, status, issue date, penalties (applied, paid, balance due), and GPS coordinates. Get aggregated summaries with open vs closed counts, breakdowns by type and year, and ECB penalty totals. Essential for real estate due diligence, property investors, building managers, and compliance teams.",
+      "pricing": "monetized"
+    },
+    "agent-memory": {
+      "id": "9fac2751-e292-4d96-9ec6-041db55be4f9",
+      "name": "Agent Memory Persistence API",
+      "shortDescription": "Persistent memory API for AI agents. FTS5 full-text search, batch ops, namespace isolation, TTL expiry, access tracking. Inspectable, structured state that agents can trust.",
+      "longDescription": "Hosted persistent memory built for AI agents that need reliable, inspectable state across sessions. Unlike magic memory layers, you control exactly what's stored and retrieved — no hidden embeddings, no surprise hallucinations. Features: FTS5 full-text search (ranked by relevance), batch store (up to 100 memories/call), namespace isolation, automatic TTL expiry, metadata filtering via json_extract, access tracking (last_accessed_at), and sort by recency or relevance. Perfect for OpenClaw agents, LangChain/CrewAI workflows, MCP servers, chatbot context, and any AI system that needs durable state without vendor lock-in. Includes x402 USDC micropayment support.",
+      "pricing": "monetized"
+    },
+    "agent-drift": {
+      "id": "f0c09949-0fc0-45a6-a78f-124a9d0e0c8a",
+      "name": "Agent Drift Detection API",
+      "shortDescription": "Monitor AI agent outputs for silent degradation. Golden test cases, 4 match modes, cron scheduling, webhook alerts, and a drift dashboard.",
+      "longDescription": "Monitor AI agent behavior and detect capability drift before it impacts users. Register golden test cases with expected outputs, schedule automated checks via cron, and receive webhook alerts when outputs deviate. Supports 4 match modes: exact (byte-for-byte), json_subset (key presence), contains (keyword matching), and status_code (HTTP code only). Features: test CRUD, manual and scheduled runs, run history with structured diffs, webhook management, and a monitoring dashboard with drift rates and response times. Essential for production AI systems, LLM-powered pipelines, and any team that needs to know when their agents silently break. Includes x402 USDC micropayment support.",
+      "pricing": "monetized"
+    },
+    "childcare-cost-data": {
+      "id": "a27ad93d-fa9a-4880-b34a-5f3daa861c12",
+      "name": "Childcare Cost Data API",
+      "shortDescription": "US childcare costs by ZIP code, county, or state. DOL data covering 3,200+ counties, 2008-2022. Center-based and family childcare pricing for infants, toddlers, and preschoolers.",
+      "longDescription": "Access the DOL National Database of Childcare Prices — the only comprehensive US childcare cost dataset. Query by ZIP code, county FIPS code, or state. Returns weekly and annual cost estimates for center-based and family childcare across three age groups (infant, toddler, preschool), at both median and 75th percentile. Includes demographic context: median household income, population, female labor force participation, and working family stats. Compare costs across locations. Covers 3,200+ counties, 48,000+ records from 2008-2022. Zero competition on any API marketplace. Perfect for fintech budgeting apps, relocation tools, HR benefits platforms, insurance underwriting, and family planning services.",
+      "pricing": "monetized"
+    },
+    "estate-sale-finder": {
+      "id": "7080991b-8b11-4da8-a80e-927b368e1a97",
+      "name": "Estate Sale Finder API",
+      "shortDescription": "Search US estate sales, garage sales, moving sales and online auctions by ZIP code or city. Returns dates, photos, addresses, seller info, and sale details.",
+      "longDescription": "Search estate sales, moving sales, garage sales, and online auctions across the United States. Find sales by ZIP code or city+state. Returns sale title, type (estate sale, moving sale, business closing, online auction), full address with GPS coordinates, sale dates, photo count, main image, company info, and direct URL. Get full details for individual sales including descriptions, seller contact info, terms, and up to 30 photos. Zero API competition — this is the only estate sale search API on any marketplace. Built for resellers, antique dealers, vintage collectors, real estate clearance apps, and deal-finding bots.",
+      "pricing": "monetized"
+    },
+    "self-storage-pricing": {
+      "id": "31daaaff-ef6f-44c6-a21a-72ce4afb6de3",
+      "name": "Self-Storage Pricing API",
+      "shortDescription": "Search 40,000+ US self-storage facilities with real-time pricing. Get unit sizes, monthly rates, amenities, ratings, special offers, and availability.",
+      "longDescription": "Search self-storage facilities across all 50 US states with real-time pricing data. Find facilities by city and state. Returns facility name, full address, phone, ratings, review count, special offers, and amenities (climate control, 24-hour access, drive-up, surveillance, etc.). Get detailed facility pages with individual unit sizes and monthly prices. Covers 40,000+ facilities via SelfStorage.com data. Zero competition on RapidAPI for storage pricing. Perfect for moving companies, relocation apps, real estate platforms, proptech startups, and storage comparison tools.",
+      "pricing": "monetized"
+    },
+    "gsa-surplus-auctions": {
+      "id": "380d55cf-ab57-4093-af31-df18b7fc71a0",
+      "name": "GSA Surplus Auctions API",
+      "shortDescription": "Search US government surplus auctions — vehicles, electronics, machinery, furniture & more. Filter by state, agency, bid range. Clean JSON from official GSA data.",
+      "longDescription": "Access US government surplus auction data from the General Services Administration (GSA). Search 600+ active auction lots from 50+ federal agencies including Army, Navy, Air Force, NASA, DHS, EPA, and VA. Filter by keyword, state, agency, status (active/preview), and bid range. Returns item name, current bid, bidder count, end date, location, agency, description, contact info, and images. Get aggregate stats: total items, bid values, top states, and top agencies. Clean JSON wrapper around the official GSA Auctions v2 API with data quality fixes (cleaned HTML, normalized zips, formatted phone numbers). Zero competition on RapidAPI. Perfect for resellers, equipment flippers, government contractors, and bargain hunters.",
+      "pricing": "monetized"
+    },
+    "home-services-cost": {
+      "id": "e1185a0b-0a88-4a85-9eb6-a0f11bd629d2",
+      "name": "Home Services Cost Estimator API",
+      "shortDescription": "Get real-time home service cost estimates — plumbers, electricians, cleaners, painters & more. Returns min/avg/max pricing and top-rated professionals.",
+      "longDescription": "Get real-time cost estimates for home services across 1,000+ categories. Search for plumbers, electricians, house cleaners, painters, landscapers, movers, HVAC technicians, and more. Returns min/avg/max/median pricing from local professionals, number of available pros, and details on top-rated service providers including ratings, reviews, and pricing. Powered by Thumbtack's professional network. Perfect for home buying due diligence apps, relocation cost calculators, real estate investment analysis, property management budgeting, and contractor comparison tools. Combines Thumbtack search with statistical price aggregation to answer 'How much does a plumber cost in my area?'",
+      "pricing": "monetized"
+    },
+    "skillguard-premium": {
+      "id": "pending",
+      "name": "Skillguard Premium API",
+      "shortDescription": "Verify AI agent skill safety before installation. Classifies skills as SAFE, CAUTION, or DANGER with confidence scores, audit trails, and batch verification.",
+      "longDescription": "AI agent skill safety verification API. Scan agent skills (MCP tools, SKILL.md files, plugins) before installing them in your AI agent stack. Returns SAFE/CAUTION/DANGER classification with confidence score, risk reasons, and a permanent audit trail ID. Batch endpoint verifies up to 100 skills in one call. Detects dangerous patterns: arbitrary code execution, privilege escalation, credential exfiltration, destructive file operations, reverse shells, and cryptomining. Also flags caution-level risks: network access, file I/O, database queries, environment variable access, and email capabilities. Built for AI agent infrastructure teams, MCP server operators, and anyone deploying third-party agent skills in production. Audit trail endpoint provides full verification history for compliance. Zero competition on RapidAPI for agent skill safety. 4 endpoints: POST /verify, POST /batch, GET /audit/:id, GET /stats.",
+      "pricing": "monetized"
+    }
+  }
+}
